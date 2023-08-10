@@ -44,15 +44,35 @@ abstract class BaseController extends Controller
     // protected $session;
 
     /**
-     * @return void
+     * Constructor.
      */
     public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger)
     {
+        $this->handleSession($request,$response);
+
+        $this->initPermission();
         // Do Not Edit This Line
         parent::initController($request, $response, $logger);
 
         // Preload any models, libraries, etc, here.
 
         // E.g.: $this->session = \Config\Services::session();
+    }
+    private function handleSession($request, $response){
+        $session_id = $request->getHeaderLine('x-sid');
+        if( $session_id && strlen($session_id) > 30 ){
+            //session_id must be valid string not 'null'
+            session_id($session_id);
+        }
+        session();
+        $response->setHeader('x-sid', session_id());
+    }
+
+    
+    private function initPermission(){
+        //if(empty(session()->get('permissions'))){
+            //$PermissionModel = model('PermissionModel');
+            //$PermissionModel->updateSession();
+        //}
     }
 }

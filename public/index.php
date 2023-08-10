@@ -1,5 +1,24 @@
 <?php
-
+function handleCors(){
+    if( !function_exists('getallheaders') ){
+        return 'fromCli';
+    }
+    foreach (getallheaders() as $name => $value) {
+        if( strtolower($name)=='origin' && (str_contains($value, 'lugat-api') || str_contains($value, 'localhost')) ){
+            header("Access-Control-Allow-Origin: $value");
+            break;
+        }
+    }
+    header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, x-sid");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+    header("Access-Control-Allow-Credentials: true");
+    header("Access-Control-Expose-Headers: x-sid");
+    $method = isset($_SERVER['REQUEST_METHOD'])?$_SERVER['REQUEST_METHOD']:'';
+    if( $method == "OPTIONS" ) {
+        die();
+    }
+}
+handleCors();
 // Check PHP version.
 $minPhpVersion = '7.4'; // If you update this, don't forget to update `spark`.
 if (version_compare(PHP_VERSION, $minPhpVersion, '<')) {
@@ -47,7 +66,7 @@ require_once SYSTEMPATH . 'Config/DotEnv.php';
  * ---------------------------------------------------------------
  *
  * The CodeIgniter class contains the core functionality to make
- * the application run, and does all the dirty work to get
+ * the application run, and does all of the dirty work to get
  * the pieces all working together.
  */
 
@@ -60,7 +79,7 @@ $app->setContext($context);
  *---------------------------------------------------------------
  * LAUNCH THE APPLICATION
  *---------------------------------------------------------------
- * Now that everything is set up, it's time to actually fire
+ * Now that everything is setup, it's time to actually fire
  * up the engines and make this app do its thang.
  */
 
