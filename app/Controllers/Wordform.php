@@ -9,32 +9,27 @@ class Wordform extends BaseController
     public function getItem()
     {
         
-        $UserModel = model('UserModel');
+        $WordformModel = model('WordformModel');
 
-        $user_id = $this->request->getVar('user_id');
+        $wordform_id = $this->request->getVar('wordform_id');
 
-        if( !$user_id ){
-            $user_id = session()->get('user_id');
-        }
+        $wordform = $WordformModel->getItem($wordform_id);
 
-        $user = $UserModel->getItem($user_id);
-
-        if ($user == 'not_found') {
+        if ($wordform == 'not_found') {
             return $this->failNotFound('not_found');
         }
 
-        return $this->respond($user);
+        return $this->respond($wordform);
     }
     public function getList()
     {
         $WordformModel = model('WordformModel');
 
-        $language_id = $this->request->getVar('language_id');
+        $fields = $this->request->getVar('fields');
         $limit = $this->request->getVar('limit');
         $offset = $this->request->getVar('offset');
-
         $data = [
-            'language_id' => $language_id,
+            'fields' => $fields,
             'limit' => $limit,
             'offset' => $offset
         ];
@@ -48,7 +43,12 @@ class Wordform extends BaseController
     {
         $WordformModel = model('WordformModel');
 
-        $result = $WordformModel->getTotalRows();
+        $fields = $this->request->getVar('fields');
+        
+        $data = [
+            'fields' => $fields
+        ];
+        $result = $WordformModel->getTotalRows($data);
         if(!$result){
             return $this->failNotFound('not_found');
         }
