@@ -55,9 +55,11 @@ class WordformModel extends Model
             });
         }
 
-        
+        if(!empty($data['limit']) && !empty($data['offset'])){
+            $this->limit($data['limit'], $data['offset']);
+        }
 
-        $wordforms = $this->limit($data['limit'], $data['offset'])->orderBy('wordform')->get()->getResultArray();
+        $wordforms = $this->orderBy('wordform')->get()->getResultArray();
         
         if(empty($wordforms)){
             return false;
@@ -80,18 +82,17 @@ class WordformModel extends Model
             $this->join('achievements_usermap', 'achievements_usermap.item_id = achievements.id')
             ->where('achievements_usermap.user_id', $data['user_id']);
         }*/
-        
-
-        
-
         $wordform = $this->join('lgt_word_list', 'lgt_word_list.word_id = lgt_wordform_list.word_id')
         ->join('lgt_wordform_sets', 'lgt_wordform_sets.set_configuration_id = lgt_wordform_list.set_configuration_id')
         ->select('lgt_wordform_list.*, lgt_wordform_sets.template, lgt_word_list.word')
         ->where('wordform_id', $wordform_id)->get()->getRowArray();
         
+
         if(empty($wordform)){
             return false;
         }
+        $omonymsFilter = (object) array('wordform' => $wordform['wordform']);
+        $wordform['omonyms'] = $this->getList(['fields' => $omonymsFilter]);
         /*
         foreach($achievements as &$achievement){
             $achievement = array_merge($achievement, $DescriptionModel->getItem('achievement', $achievement['id']));

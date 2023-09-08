@@ -30,6 +30,7 @@ $routes->set404Override();
 // We get a performance increase by specifying the default
 // route since we don't have to scan directories.
 $routes->post('/Wordform/(:any)', 'Wordform::$1');
+$routes->post('/Sentence/(:any)', 'Sentence::$1');
 $routes->post('/Set/(:any)', 'Set::$1');
 
 /*
