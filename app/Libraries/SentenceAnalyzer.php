@@ -20,35 +20,13 @@ class SentenceAnalyzer{
             if(in_array($word, $this->skip)){
                 continue;
             }
-            $sourceData = $this->getTranslations($word);
-            $sourceData['index'] = $sourceIndex;
-
-            $translations = $this->findWord($word, $targetWords);
-            print_r($sourceData);
-            print_r($translations);
-            die;
-            /*
-            $chunks = getChunks(trim($word));
-            $translated_word = findWord(implode('', $chunks));
-            if(!$translated_word){
-                $translated_word = morphologyNormalize($chunks);
-                if($translated_word){
-                    $translated[] = $translated_word[0];
-                    //$translated[][$word] = '( '.implode('|',$translated_word).' )';
-                } else {
-                    //$translated[][$word] = $word;
-                    $translated[] = $word;
-                }
-            } else {
-                $translated[] = $translated_word[0];
-                //$translated[][$word] = '( '.implode('|',$translated_word).' )';
-            }
-            */
-            $sourceResult[] = $word;
+            $word = strtolower($word);
+            $result[] = [
+                'matches'       => $this->findMatches($word, $targetWords),
+                'word'          => $word,
+                'sourceIndex'   => $sourceIndex
+            ];
         }
-        print_r($sourceResult);
-        die;
-
         return $result;
 
     }
@@ -64,29 +42,40 @@ class SentenceAnalyzer{
             }
         }
         $sentence = str_replace('  ',  ' ',$sentence);
+        $sentence = str_replace('ё', 'е', $sentence);
         return $sentence;
     }
 
-    public function findWord($word, $targetWords)
+    public function findMatches($sourceWord, $targetWords)
     {
-        $translations = $this->getTranslations($word);
+        $translations = $this->getTranslations($sourceWord);
+        $result = [];
         foreach($targetWords as $sentenceIndex => $word){
+            $word = strtolower($word);
             foreach($translations as $translation){
-                if($translation['wordform'] === $word){
-                    $translation['index'] = $sentenceIndex;
-                    return $translation;
+                $translation['target_wordform'] = $this->utilizeWord($translation['target_wordform']);
+                if($translation['target_wordform'] === $word){
+                    $translation['target_index'] = $sentenceIndex;
+                    $result[] = $translation;
                 }
             }
         }
-        return false;
+        return $result;
     }
 
     public function getTranslations($word)
     {
         $db = \Config\Database::connect();
         $sql = "
-            SELECT 
-                wfl1.*
+            SELECT DISTINCT
+                wl.word as `source_word`,
+                wl.relation_id as `source_relation_id`,
+                wfl.word_id as `source_word_id`,
+                wfl.wordform as `source_wordform`,
+                wl1.word as `target_word`,
+                wl1.relation_id as `target_relation_id`,
+                wfl1.word_id as `target_word_id`,
+                wfl1.wordform as `target_wordform`
             FROM
                 lugat_db.lgt_wordform_list wfl
                 JOIN
@@ -100,5 +89,10 @@ class SentenceAnalyzer{
         ";
         return $db->query($sql)->getResultArray();
     }
-    
+
+    private function utilizeWord($str)
+    {
+        $str = str_replace('ё', 'е', $str);
+        return $str;
+    }
 }
