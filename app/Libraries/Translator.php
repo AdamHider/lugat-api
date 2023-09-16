@@ -35,29 +35,50 @@ class Translator{
     }
     public function remember($data)
     {
-        $result = [];
+        $predictions = [];
         foreach($data['tokenData'] as $sourceIndex => $token){
-            foreach($token['matches'] as $match){
-                $result[] = [
-                    'relation_id'   => 1, 
-                    'token'         => $token['text'], 
+            foreach($token['matches'] as $targetIndex){
+                $sourceTokenTotal = count($data['sentences']['source']);
+                $targetTokenTotal = count($data['sentences']['target']);
+
+                $groupId = $this->getLastGroupId();
+                $sourceToken = $token['text'];
+                $sourcePosition = $this->calculateTokenPosition($sourceTokenTotal, $sourceIndex);
+                $oldSourcePosition = 0;
+                $sourceFrequency = 0;
+
+                $targetToken = $data['sentences']['target'][$targetIndex];
+                $targetPosition = $this->calculateTokenPosition($targetTokenTotal, $sourceIndex);
+                $oldTargetPosition = 0;
+                $targetFrequency = 0;
+
+                $existingPredictionPair = $this->getPredictionPair($sourceToken, $targetToken);
+                if(!empty($existingPredictionPair)){
+                    $groupId = $existingPredictionPair['denotation_id'];
+                    $oldSourcePosition = $existingPredictionPair['source_position'];
+                    $oldTargetPosition = $existingPredictionPair['target_position'];
+                    $sourceFrequency = $existingPredictionPair['source_frequency']+1;
+                    $targetFrequency = $existingPredictionPair['target_frequency']+1;
+                }
+                $predictions[] = [
+                    'denotation_id' => $groupId, 
+                    'token'         => $sourceToken, 
                     'coords'        => 1, 
-                    'position'      => $this->calculateTokenPosition($data['sentences']['source'], $sourceIndex), 
-                    'is_compound'   
+                    'position'      => $this->updateTokenPosition($sourcePosition, $oldSourcePosition, $sourceFrequency), 
+                    'is_compound'   => false,
+                    'frequency'     => $sourceFrequency
                 ];
-                $result[] = [
-                    'relation_id'   => 1, 
-                    'token'         => $data['sentences']['target'][$match], 
+                $predictions[] = [
+                    'denotation_id' => $groupId, 
+                    'token'         => $targetToken, 
                     'coords'        => 1, 
-                    'position'      => $this->calculateTokenPosition($data['sentences']['target'], $match), 
-                    'is_compound'   
+                    'position'      => $this->updateTokenPosition($targetPosition, $oldTargetPosition, $targetFrequency), 
+                    'is_compound'   => false,
+                    'frequency'     => $targetFrequency
                 ];
             }
         }
-        print_r($result);
-        die;
-        
-        return $result;
+        return $this->putInMemory($predictions);
     }
     public function learn($data)
     {
@@ -81,10 +102,8 @@ class Translator{
         $result['sentences']['target'] = $targetTokenList;
         return $result;
     }
-
     public function getMatchesFromExperience($sourceTokenObject, $targetTokenList)
     {
-
         $stockPredictions = $this->getTokenPredictions($sourceTokenObject['text'], $sourceTokenObject['position']);
         $result = [];
         foreach($targetTokenList as $index => $targetToken){
@@ -97,7 +116,7 @@ class Translator{
         }
         return $result;
     }
-    
+    /*
     public function findMatches($sourceToken, $targetTokenList)
     {
         $translations = $this->getTokenTranslations($sourceToken);
@@ -116,7 +135,7 @@ class Translator{
         }
         return $result;
     }
-
+    */
 
     private function predictionNormalize($predictionList)
     {
@@ -129,22 +148,29 @@ class Translator{
         $result = explode(' ', $sentence);
         return $result;
     }
-    public function calculateTokenPosition($tokenList, $index)
+    public function calculateTokenPosition($tokenTotal, $index)
     {
-        $sentenceLength = count($tokenList);
-        return round(($index+1) * 100 / $sentenceLength,2);
+        return round(($index + 1) / $tokenTotal, 2);
+    }
+    public function updateTokenPosition($newPosition, $oldPosition, $frequency)
+    {
+        $quantifier = 1 - (($frequency - 1) / $frequency );
+        $value = ($newPosition - $oldPosition) * $quantifier;
+        return round($oldPosition + $value, 2);
     }
     private function getTokenPredictions($token, $position)
     {
         $db = \Config\Database::connect();
         $sql = "
-            SELECT t1.token, t1.position
+            SELECT t1.token, t1.position, ABS(t.position - 0) as `rank`
             FROM lugat_db.lgt_example_relation_test t JOIN lugat_db.lgt_example_relation_test t1 ON t.denotation_id = t1.denotation_id and t.token != t1.token 
             WHERE t.token = '$token'
-            GROUP BY t1.coords ORDER BY abs(t.position - $position)
+            GROUP BY t1.token, t1.position, `rank`
+            ORDER BY `rank`
         ";
         return $db->query($sql)->getResultArray();
     }
+
     public function getTokenTranslations($token)
     {
         $db = \Config\Database::connect();
@@ -169,6 +195,65 @@ class Translator{
                 wfl.wordform = '$token'
         ";
         return $db->query($sql)->getResultArray();
+    }
+    private function getPredictionPair($sourceToken, $targetToken)
+    {
+        $db = \Config\Database::connect();
+        $sql = "
+            SELECT 
+                t.denotation_id,
+                t.token as `source_token`,
+                t.position as `source_position`,
+                t.frequency as `source_frequency`,
+                t1.token as `target_token`, 
+                t1.position as `target_position`,
+                t1.frequency as `target_frequency`
+            FROM
+                lugat_db.lgt_example_relation_test t
+                    JOIN
+                lugat_db.lgt_example_relation_test t1 ON t.denotation_id = t1.denotation_id
+                    AND t.token != t1.token
+            WHERE
+                t.token = '$sourceToken' AND t1.token = '$targetToken'
+        ";
+        return $db->query($sql)->getRowArray();
+    }
+    private function putInMemory($predictions)
+    {
+        $db = \Config\Database::connect();
+        foreach($predictions as $prediction){
+            $sql = "
+                INSERT INTO
+                    lugat_db.lgt_example_relation_test
+                SET
+                    id = NULL, 
+                    denotation_id = '".$prediction['denotation_id']."', 
+                    token = '".$prediction['token']."', 
+                    coords = '".$prediction['coords']."', 
+                    position = '".$prediction['position']."', 
+                    is_compound = '".$prediction['is_compound']."', 
+                    frequency = '".$prediction['frequency']."'
+                ON DUPLICATE KEY UPDATE
+                    coords = '".$prediction['coords']."', 
+                    position = '".$prediction['position']."', 
+                    is_compound = '".$prediction['is_compound']."', 
+                    frequency = '".$prediction['frequency']."'
+            ";
+            $db->query($sql);
+        }
+        return true;
+    }
+    
+    private function getLastGroupId()
+    {
+        $db = \Config\Database::connect();
+        $sql = "
+            SELECT 
+                MAX(denotation_id)+1 as lastId
+            FROM
+                lugat_db.lgt_example_relation_test
+        ";
+        return $db->query($sql)->getRow()->lastId;
     }
     private function array_sort($a, $b)
     {
