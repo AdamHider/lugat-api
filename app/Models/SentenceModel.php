@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 use CodeIgniter\Database\BaseBuilder;
-use App\Libraries\SentenceAnalyzer;
+use App\Libraries\Translator;
 
 class WordModel extends Model
 {
@@ -74,9 +74,34 @@ class WordModel extends Model
 
     public function analyze ($data) 
     {
-        $SentenceAnalyzer = new SentenceAnalyzer;
+        $Translator = new Translator;
 
-        $result = $SentenceAnalyzer->analyze($data);
+        //$result = $SentenceAnalyzer->analyze($data);
+
+        //$source = $SentenceAnalyzer->utilize($data['source']);
+
+        $result = $Translator->learn($data);
+
+        //$prediction = predict($tokenList);
+
+        if(empty($result)){
+            return false;
+        }
+
+        return $result;
+    }
+
+    public function saveRelations ($data) 
+    {
+        $Translator = new Translator;
+
+        //$result = $SentenceAnalyzer->analyze($data);
+
+        //$source = $SentenceAnalyzer->utilize($data['source']);
+
+        $result = $Translator->remember($data);
+
+        //$prediction = predict($tokenList);
 
         if(empty($result)){
             return false;

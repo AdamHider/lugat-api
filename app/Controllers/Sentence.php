@@ -58,4 +58,17 @@ class Sentence extends BaseController
         return $this->respond($result, 200);
     }
 
+    public function saveRelations()
+    {
+        $SentenceModel = model('SentenceModel');
+
+        $data = $this->request->getJSON(true);
+        
+        $result = $SentenceModel->saveRelations($data);
+        if(!$result){
+            return $this->failNotFound('not_found');
+        }
+        return $this->respond($result, 200);
+    }
+
 }
