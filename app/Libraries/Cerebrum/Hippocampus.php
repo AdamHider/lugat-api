@@ -7,14 +7,14 @@ use App\Libraries\Cerebrum\Hypophysis;
 class Hippocampus{
     protected $skip = ['«', '»', '!', '?', '.', ',', ';', ':', '…', '“'];
 
-    public function predict($text)
+    public function predict($data)
     {
         $Hypophysis = new Hypophysis;
         $Neuron = new Neuron;
-        $tokenList = $this->tokenize($text);
+        $tokenList = $this->tokenize($data['source']['text']);
         $predictionList = [];
         foreach($tokenList as $token){
-            $predictionRaw = $Neuron->getList($token['value'], $token['position']);
+            $predictionRaw = $Neuron->getList($token['value'], $token['position'], $data['source']['language_id'], $data['target']['language_id']);
             $predictions = [];
             if(!empty($predictionRaw)){
                 $axon_id = $predictionRaw[0]['axon_id'];
@@ -51,7 +51,6 @@ class Hippocampus{
         $Neuron = new Neuron;
         $Hypophysis = new Hypophysis;
         $tokenPairs = $Hypophysis->unmap($data);
-
         foreach($tokenPairs as $tokenPair){
             $neuronPair = $Neuron->getPair($tokenPair[0]['token'], $tokenPair[1]['token']);
             foreach($neuronPair as $index => &$neuron){
@@ -70,8 +69,12 @@ class Hippocampus{
         $Hypophysis = new Hypophysis;
         $result = [
             'tokens' => [
-                'source' => $Hypophysis->tokenizeSentence($data['source']),
-                'target' => $Hypophysis->tokenizeSentence($data['target'])
+                'source' => $Hypophysis->tokenizeSentence($data['source']['text']),
+                'target' => $Hypophysis->tokenizeSentence($data['target']['text'])
+            ],
+            'languageMap' => [
+                'source' => $data['source']['language_id'],
+                'target' => $data['target']['language_id']
             ],
             'map' => []
         ];

@@ -12,14 +12,8 @@ class Translator extends BaseController
     {
         $Hippocampus = new Hippocampus;
 
-        $source = $this->request->getVar('source');
-        $target = $this->request->getVar('target');
+        $data = $this->request->getJSON(true);
         
-        $data = [
-            'source' => $source,
-            'target' => $target
-        ];
-
         $result = $Hippocampus->analyze($data);
         if(!$result){
             return $this->failNotFound('not_found');
@@ -44,9 +38,9 @@ class Translator extends BaseController
     {
         $Hippocampus = new Hippocampus;
 
-        $text = $this->request->getVar('text');
+        $data = $this->request->getJSON(true);
         
-        $result = $Hippocampus->predict($text);
+        $result = $Hippocampus->predict($data);
         if(!$result){
             return $this->failNotFound('not_found');
         }

@@ -4,15 +4,16 @@ namespace App\Libraries\Cerebrum;
 class Neuron{
 
 
-    public function getList($core, $position)
+    public function getList($core, $position, $source_language, $target_language)
     {
         $db = \Config\Database::connect();
         $sql = "
-            SELECT t1.core, t1.position, t.axon_strength, ABS(t.position - 0) as `rank`, t.axon_id
-            FROM crbrm_neurons t JOIN crbrm_neurons t1 ON t.axon_id = t1.axon_id and t.core != t1.core   AND t1.language_id = 2 
-            WHERE t.core = '$core'  AND t.language_id = 1 
+            SELECT t1.core, t1.position, t.axon_strength, ABS(t.position - $position) as `rank`, t.axon_id,
+            (SELECT COUNT(*) FROM crbrm_neurons n JOIN crbrm_neurons n1 ON n.axon_id = n1.axon_id and n.core != n1.core  AND n1.language_id = 1 WHERE t1.core = n1.core) as `axon_count`
+            FROM crbrm_neurons t JOIN crbrm_neurons t1 ON t.axon_id = t1.axon_id and t.core != t1.core   AND t1.language_id = $target_language
+            WHERE t.core = '$core'  AND t.language_id = $source_language
             GROUP BY t1.core, t1.position, t.axon_strength, `rank`, t.axon_id
-            ORDER BY axon_strength desc, `rank`
+            ORDER BY axon_count, axon_strength desc, `rank`
         ";
         return $db->query($sql)->getResultArray();
     }
@@ -64,12 +65,16 @@ class Neuron{
                     coords      = ".$neuron['coords'].", 
                     position    = ".(float) $neuron['position'].", 
                     is_compound = ".((!$neuron['is_compound']) ? 'NULL' : 1).", 
-                    frequency    = ".(int) $neuron['frequency']."
+                    frequency    = ".(int) $neuron['frequency'].",
+                    axon_strength => ".(int) $neuron['axon_strength'].",
+                    language_id => ".(int) $neuron['language_id']."
                 ON DUPLICATE KEY UPDATE
                     coords      = ".$neuron['coords'].", 
                     position    = ".(float) $neuron['position'].", 
                     is_compound = ".((!$neuron['is_compound']) ? 'NULL' : 1).", 
-                    frequency   = ".(int) $neuron['frequency']."
+                    frequency   = ".(int) $neuron['frequency'].",
+                    axon_strength => ".(int) $neuron['axon_strength'].",
+                    language_id => ".(int) $neuron['language_id']."
             ";
         return $db->query($sql);
     }
@@ -95,6 +100,8 @@ class Neuron{
                 'position'  => false,
                 'is_compound' => null,
                 'frequency' => 0,
+                'axon_strength' => 1,
+                'language_id' => 1
             ],
             [
                 'axon_id'   => $axon_id,
@@ -103,6 +110,8 @@ class Neuron{
                 'position'  => false,
                 'is_compound' => null,
                 'frequency' => 0,
+                'axon_strength' => 1,
+                'language_id' => 2
             ]
         ];
     }

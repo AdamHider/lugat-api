@@ -62,18 +62,20 @@ class Hypophysis{
     {
         $result = [];
         foreach($data['map'] as $sourceIndex => $matches){
+            $axonGroup = [];
+            $axonGroup[] = [
+                'language_id'=> $data['languageMap']['source'],
+                'token'     => $data['tokens']['source'][$sourceIndex],
+                'position'  => $this->calculateTokenPosition(count($data['tokens']['source']), $sourceIndex)
+            ];
             foreach($matches as $targetIndex){
-                $result[] = [
-                    [
-                        'token'     => $data['tokens']['source'][$sourceIndex],
-                        'position'  => $this->calculateTokenPosition(count($data['tokens']['source']), $sourceIndex)
-                    ],
-                    [
-                        'token'     => $data['tokens']['target'][$targetIndex],
-                        'position'  => $this->calculateTokenPosition(count($data['tokens']['target']), $targetIndex)
-                    ]
+                $axonGroup[] = [ 
+                    'language_id'=> $data['languageMap']['target'],
+                    'token'     => $data['tokens']['target'][$targetIndex],
+                    'position'  => $this->calculateTokenPosition(count($data['tokens']['target']), $targetIndex)
                 ];
             }
+            $result[] = $axonGroup;
         }
         return $result;
     }
