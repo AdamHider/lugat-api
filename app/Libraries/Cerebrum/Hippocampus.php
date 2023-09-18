@@ -13,8 +13,19 @@ class Hippocampus{
         $Neuron = new Neuron;
         $tokenList = $this->tokenize($data['source']['text']);
         $predictionList = [];
-        foreach($tokenList as $token){
-            $predictionRaw = $Neuron->getList($token['value'], $token['position'], $data['source']['language_id'], $data['target']['language_id']);
+        foreach($tokenList as $index => $token){
+            $tokenObject = [
+                'text' => $token['value'],
+                'position' => $token['position'],
+                'language_id' => $data['source']['language_id']
+            ];
+            if(isset($tokenList[$index-1])){
+                $tokenObject['previousToken'] = $tokenList[$index-1]['value'];
+            }
+            if(isset($tokenList[$index+1])){
+                $tokenObject['nextToken'] = $tokenList[$index+1]['value'];
+            }
+            $predictionRaw = $Neuron->getList($tokenObject, $data['target']['language_id']);
             $predictions = [];
             if(!empty($predictionRaw)){
                 $axon_id = $predictionRaw[0]['axon_id'];

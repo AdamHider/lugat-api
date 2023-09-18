@@ -4,16 +4,22 @@ namespace App\Libraries\Cerebrum;
 class Neuron{
 
 
-    public function getList($core, $position, $source_language, $target_language)
+    public function getList($sourceToken, $target_language)
     {
         $db = \Config\Database::connect();
+        $contextRankQuery = "1";
+        if(isset($sourceToken['previousToken'])){
+            $contextRankQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$sourceToken['language_id']." and t2.core IN ('".$sourceToken['previousToken']."') AND t2.position < ".$sourceToken['position'].")";
+        }
+        if(isset($sourceToken['nextToken'])){
+            $contextRankQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$sourceToken['language_id']." and t2.core IN ('".$sourceToken['nextToken']."') AND t2.position > ".$sourceToken['position'].")";
+        }
         $sql = "
-            SELECT t1.core, t1.position, t.axon_strength, ABS(t.position - $position) as `rank`, t.axon_id,
-            (SELECT COUNT(*) FROM crbrm_neurons n JOIN crbrm_neurons n1 ON n.axon_id = n1.axon_id and n.core != n1.core  AND n1.language_id = 1 WHERE t1.core = n1.core) as `axon_count`
+            SELECT t1.core, t1.position, ABS(t.position - ".$sourceToken['position'].") as `rank`, t.axon_id, CONCAT($contextRankQuery) AS `context_rank`
             FROM crbrm_neurons t JOIN crbrm_neurons t1 ON t.axon_id = t1.axon_id and t.core != t1.core   AND t1.language_id = $target_language
-            WHERE t.core = '$core'  AND t.language_id = $source_language
-            GROUP BY t1.core, t1.position, t.axon_strength, `rank`, t.axon_id
-            ORDER BY axon_count, axon_strength desc, `rank`
+            WHERE t.core = '".$sourceToken['text']."'  AND t.language_id = ".$sourceToken['language_id']."
+            GROUP BY t1.core, t1.position, `rank`, t.axon_id, context_rank
+            ORDER BY context_rank DESC, t.axon_strength DESC, `rank`
         ";
         return $db->query($sql)->getResultArray();
     }
