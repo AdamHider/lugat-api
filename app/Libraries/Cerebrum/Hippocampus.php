@@ -91,18 +91,29 @@ class Hippocampus{
         ];
         foreach($result['tokens']['source'] as $index => &$sourceToken){
             $token = strtolower($sourceToken);
-            $result['map'][$index] = $this->getMatchesFromExperience($token, $index, $result['tokens']['target']);
+            $result['map'][$index] = $this->getMatchesFromExperience($index, $result);
         }
         return $result;
     }
-    public function getMatchesFromExperience($token, $index, $targetTokenList)
+    public function getMatchesFromExperience($index, $data)
     {
         $Neuron = new Neuron;
         $Hypophysis = new Hypophysis;
-
-        $neurons = $Neuron->getList($token, $index);
+        
+        $tokenObject = [
+            'text' => $data['tokens']['source'][$index],
+            'position' => $Hypophysis->calculateTokenPosition(count($data['tokens']['source']), $index),
+            'language_id' => $data['languageMap']['source']
+        ];
+        if(isset($data['tokens']['source'][$index-1])){
+            $tokenObject['previousToken'] = $data['tokens']['source'][$index-1];
+        }
+        if(isset($data['tokens']['source'][$index+1])){
+            $tokenObject['nextToken'] = $data['tokens']['source'][$index+1];
+        }
+        $neurons = $Neuron->getList($tokenObject, $data['languageMap']['target']);
         $result = [];
-        foreach($targetTokenList as $index => $targetToken){
+        foreach($data['tokens']['target'] as $index => $targetToken){
             foreach($neurons as $neuron){
                 $neuron['core'] = $Hypophysis->utilizeToken($neuron['core']);
                 if($neuron['core'] === $targetToken){
