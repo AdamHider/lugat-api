@@ -3,18 +3,18 @@
 namespace App\Controllers;
 
 use CodeIgniter\API\ResponseTrait;
-use App\Libraries\Cerebrum\Hippocampus;
+use App\Libraries\Cerebrum\Thalamus;
 class Translator extends BaseController
 {
     use ResponseTrait;
 
     public function analyze()
     {
-        $Hippocampus = new Hippocampus;
+        $Thalamus = new Thalamus;
 
         $data = $this->request->getJSON(true);
         
-        $result = $Hippocampus->analyze($data);
+        $result = $Thalamus->analyze($data);
         if(!$result){
             return $this->failNotFound('not_found');
         }
@@ -23,11 +23,11 @@ class Translator extends BaseController
 
     public function train()
     {
-        $Hippocampus = new Hippocampus;
+        $Thalamus = new Thalamus;
 
         $data = $this->request->getJSON(true);
         
-        $result = $Hippocampus->remember($data);
+        $result = $Thalamus->remember($data);
         if(!$result){
             return $this->failNotFound('not_found');
         }
@@ -36,11 +36,11 @@ class Translator extends BaseController
 
     public function predict()
     {
-        $Hippocampus = new Hippocampus;
+        $Thalamus = new Thalamus;
 
         $data = $this->request->getJSON(true);
         
-        $result = $Hippocampus->predict($data);
+        $result = $Thalamus->predict($data);
         if(!$result){
             return $this->failNotFound('not_found');
         }
