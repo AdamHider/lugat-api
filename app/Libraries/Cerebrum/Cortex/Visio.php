@@ -71,8 +71,11 @@ class Visio{
     public function getSurroundingTokens($index, $tokenList)
     {
         $result = [];
-        if(isset($tokenList[$index-1])) $result['previousToken'] = $tokenList[$index-1];
-        if(isset($tokenList[$index+1])) $result['nextToken'] = $tokenList[$index+1];
+        foreach($tokenList as $tokenIndex => $token){
+            if($tokenIndex < $index) $result['previousTokens'][] = $token;
+            if($tokenIndex > $index) $result['nextTokens'][] = $token;
+        }
+        
         return $result;
     }
     

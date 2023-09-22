@@ -9,8 +9,8 @@ class Neuron{
     {
         $db = \Config\Database::connect();
         $contextQuery = "1";
-        if(isset($context['previousToken'])) $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".$context['previousToken']."') AND t2.position < ".$neuron['position'].")";
-        if(isset($context['nextToken']))     $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".$context['nextToken']."') AND t2.position > ".$neuron['position'].")";
+        if(isset($context['previousTokens'])) $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".implode("','", $context['previousTokens'])."') AND t2.position < ".$neuron['position'].")";
+        if(isset($context['nextTokens']))     $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".implode("','", $context['nextTokens'])."') AND t2.position > ".$neuron['position'].")";
         $sql = "
             SELECT 
                 t.axon_id, t1.core, t1.position, 
@@ -23,7 +23,7 @@ class Neuron{
             GROUP BY 
                 t1.core, t1.position, `rank`, t.axon_id, context_rank
             ORDER BY 
-                context_rank DESC, t.axon_strength DESC, `rank`
+                context_rank DESC, `rank`
         ";
         if($onlyFirstAxon){
             $sql = "SELECT * FROM crbrm_neurons WHERE axon_id = (SELECT axon_id FROM ($sql)a GROUP BY axon_id LIMIT 1) AND language_id = $target_language";
