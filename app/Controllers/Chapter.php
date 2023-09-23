@@ -25,13 +25,9 @@ class Chapter extends BaseController
     {
         $ChapterModel = model('ChapterModel');
 
-        $fields = $this->request->getVar('fields');
-        $limit = $this->request->getVar('limit');
-        $offset = $this->request->getVar('offset');
+        $book_id = $this->request->getVar('book_id');
         $data = [
-            'fields' => $fields,
-            'limit' => $limit,
-            'offset' => $offset
+            'book_id' => $book_id
         ];
         $result = $ChapterModel->getList($data);
         if(!$result){
@@ -40,4 +36,26 @@ class Chapter extends BaseController
         return $this->respond($result, 200);
     }
 
+    public function createItem()
+    {
+        $ChapterModel = model('ChapterModel');
+
+        $book_id = $this->request->getVar('book_id');
+        $number = $this->request->getVar('number');
+        $data = [
+            'book_id' => $book_id,
+            'number' => $number
+        ];
+        $chapter_id = $ChapterModel->createItem($data);
+
+        if ($book_id === 'forbidden') {
+            return $this->failForbidden();
+        }
+
+        if($ChapterModel->errors()){
+            return $this->failValidationErrors($ChapterModel->errors());
+        }
+
+        return $this->respond($chapter_id);
+    }
 }

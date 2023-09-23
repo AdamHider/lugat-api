@@ -14,9 +14,13 @@ class BookModel extends Model
 
     protected $returnType = 'array';
     protected $useSoftDeletes = true;
-
     protected $allowedFields = [
-        'image'
+        'relation_id', 
+        'author', 
+        'title', 
+        'year', 
+        'language_id', 
+        'status'
     ];
     
     protected $useTimestamps = false;
@@ -33,18 +37,22 @@ class BookModel extends Model
             ->where('achievements_usermap.user_id', $data['user_id']);
         }*/
         
-        $this->table('lgta_books')->select('lgta_books.*');
+        $this->table('lgta_books')
+        ->join('lgta_book_chapters', 'lgta_book_chapters.book_id = lgta_books.id', 'left')
+        ->select('lgta_books.*, COUNT(lgta_book_chapters.id) as chapters');
         
         if(!empty($data['filter'])){
-            $this->like('title', $data['filter']);
-            $this->orLike('author', $data['filter']);   
-            $this->orLike('year', $data['filter']); 
+            $this->like('lgta_books.title', $data['filter']);
+            $this->orLike('lgta_books.author', $data['filter']);   
+            $this->orLike('lgta_books.year', $data['filter']); 
         }
         if(!empty($data['limit']) && !empty($data['offset'])){
             $this->limit($data['limit'], $data['offset']);
+        } else {
+            $this->limit(50, 0);
         }
 
-        $books = $this->orderBy('title')->get()->getResultArray();
+        $books = $this->groupBy('lgta_books.id')->orderBy('title')->get()->getResultArray();
         
         if(empty($books)){
             return false;
@@ -86,4 +94,24 @@ class BookModel extends Model
         }*/
         return $book;
     }
+    
+    public function createItem ($data)
+    {
+        $this->validationRules = [];
+        $data = [
+            'relation_id' => null,
+            'title' => $data['title'], 
+            'author' => $data['author'], 
+            'year' => $data['year'], 
+            'language_id' => null,
+            'status' => 0
+        ];
+        $this->transBegin();
+        $book_id = $this->insert($data, true);
+
+        $this->transCommit();
+
+        return $book_id;        
+    }
+
 }

@@ -39,4 +39,30 @@ class Book extends BaseController
         }
         return $this->respond($result, 200);
     }
+    public function createItem()
+    {
+        $BookModel = model('BookModel');
+
+        $title = $this->request->getVar('title');
+        $author = $this->request->getVar('author');
+        $year = $this->request->getVar('year');
+
+        $data = [
+            'title' => $title,
+            'author' => $author,
+            'year' => $year
+        ];
+
+        $book_id = $BookModel->createItem($data);
+
+        if ($book_id === 'forbidden') {
+            return $this->failForbidden();
+        }
+
+        if($BookModel->errors()){
+            return $this->failValidationErrors($BookModel->errors());
+        }
+
+        return $this->respond($book_id);
+    }
 }

@@ -7,16 +7,17 @@ use CodeIgniter\Database\BaseBuilder;
 
 class ChapterModel extends Model
 {
-    protected $table      = 'lgta_chapters';
+    protected $table      = 'lgta_book_chapters';
     protected $primaryKey = 'id';
 
     protected $useAutoIncrement = true;
 
     protected $returnType = 'array';
     protected $useSoftDeletes = true;
-
     protected $allowedFields = [
-        'image'
+        'book_id', 
+        'number', 
+        'title'
     ];
     
     protected $useTimestamps = false;
@@ -25,41 +26,9 @@ class ChapterModel extends Model
     public function getList ($data) 
     {
 
-        /*
-        $DescriptionModel = model('DescriptionModel');
+        $this->table('lgta_book_chapters')->select('lgta_book_chapters.*')->where('lgta_book_chapters.book_id', $data['book_id']);
         
-        if($data['user_id']){
-            $this->join('achievements_usermap', 'achievements_usermap.item_id = achievements.id')
-            ->where('achievements_usermap.user_id', $data['user_id']);
-        }*/
-        
-        $this->table('lgta_chapters')->select('lgta_chapters.*, 
-            (SELECT word FROM lgt_word_list WHERE lgt_word_list.word_id = lgta_chapters.word_id LIMIT 1) as word,
-            (SELECT template FROM lgt_chapter_sets WHERE lgt_chapter_sets.set_configuration_id = lgta_chapters.set_configuration_id LIMIT 1) as template'
-        );
-        
-        if(!empty($data['fields']->language_id)){
-            $this->where('lgta_chapters.language_id', $data['fields']->language_id);
-        }
-        if(!empty($data['fields']->chapter)){
-            $this->like('chapter', $data['fields']->chapter, 'after');
-        }
-        if(!empty($data['fields']->word)){
-            $this->whereIn('word_id', static function (BaseBuilder $builder) use ($data) {
-                return $builder->select('word_id')->from('lgt_word_list')->like('word', $data['fields']->word, 'after');
-            });
-        }
-        if(!empty($data['fields']->template)){
-            $this->whereIn('set_configuration_id', static function (BaseBuilder $builder) use ($data) {
-                return $builder->select('set_configuration_id')->from('lgt_chapter_sets')->like('template', $data['fields']->template, 'both');
-            });
-        }
-
-        if(!empty($data['limit']) && !empty($data['offset'])){
-            $this->limit($data['limit'], $data['offset']);
-        }
-
-        $chapters = $this->orderBy('chapter')->get()->getResultArray();
+        $chapters = $this->get()->getResultArray();
         
         if(empty($chapters)){
             return false;
@@ -82,9 +51,9 @@ class ChapterModel extends Model
             $this->join('achievements_usermap', 'achievements_usermap.item_id = achievements.id')
             ->where('achievements_usermap.user_id', $data['user_id']);
         }*/
-        $chapter = $this->join('lgt_word_list', 'lgt_word_list.word_id = lgta_chapters.word_id')
-        ->join('lgt_chapter_sets', 'lgt_chapter_sets.set_configuration_id = lgta_chapters.set_configuration_id')
-        ->select('lgta_chapters.*, lgt_chapter_sets.template, lgt_word_list.word')
+        $chapter = $this->join('lgt_word_list', 'lgt_word_list.word_id = lgta_book_chapters.word_id')
+        ->join('lgt_chapter_sets', 'lgt_chapter_sets.set_configuration_id = lgta_book_chapters.set_configuration_id')
+        ->select('lgta_book_chapters.*, lgt_chapter_sets.template, lgt_word_list.word')
         ->where('chapter_id', $chapter_id)->get()->getRowArray();
         
 
@@ -100,5 +69,20 @@ class ChapterModel extends Model
             $achievement['progress'] = $this->calculateProgress($achievement);
         }*/
         return $chapter;
+    }
+    public function createItem ($data)
+    {
+        $this->validationRules = [];
+        $data = [
+            'book_id' => $data['book_id'], 
+            'number' => $data['number'],
+            'title' => null
+        ];
+        $this->transBegin();
+        $book_id = $this->insert($data, true);
+
+        $this->transCommit();
+
+        return $book_id;        
     }
 }
