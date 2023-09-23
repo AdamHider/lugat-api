@@ -33,6 +33,9 @@ $routes->post('/Wordform/(:any)', 'Wordform::$1');
 $routes->post('/Translator/(:any)', 'Translator::$1');
 $routes->post('/Sentence/(:any)', 'Sentence::$1');
 $routes->post('/Set/(:any)', 'Set::$1');
+$routes->post('/Book/(:any)', 'Book::$1');
+$routes->post('/Text/(:any)', 'Text::$1');
+$routes->post('/Chapter/(:any)', 'Chapter::$1');
 
 /*
  * --------------------------------------------------------------------
