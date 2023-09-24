@@ -18,7 +18,8 @@ class TextModel extends Model
     protected $allowedFields = [
         'chapter_id', 
         'language_id', 
-        'text'
+        'text',
+        'is_done'
     ];
     
     protected $useTimestamps = false;
@@ -78,6 +79,7 @@ class TextModel extends Model
             'chapter_id' => $data['chapter_id'], 
             'language_id' => $data['language_id'], 
             'text' => ($data['text']) ? $data['text'] : NULL, 
+            'is_done' => $data['is_done'], 
         ];
         $this->transBegin();
         $text_id = $this->insert($data, true);
@@ -102,4 +104,27 @@ class TextModel extends Model
 
         return $data['id'];        
     }
+    public function textToSentences ($data)
+    {
+        $result = [];
+        if($data['is_done']){
+            return $data;
+        }
+        $sentences = explode("\n", $data['text']);
+        foreach($sentences as $index => $sentence){
+            if(trim($sentence) !== ''){
+                $result[] = [
+                    'chapter_id'    => $data['chapter_id'],
+                    'text'          => trim($sentence),
+                    'index'         => $index,
+                    'language_id'   => $data['language_id'],
+                    'is_trained'    => false
+                ];
+                
+            }
+        }
+        return $result;
+    }
+
+    
 }

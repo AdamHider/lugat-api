@@ -17,11 +17,12 @@ class SentenceModel extends Model
     protected $useSoftDeletes = true;
 
     protected $allowedFields = [
-        'wordform_id', 
-        'wordform', 
-        'is_disabled', 
-        'word_id', 
-        'set_configuration_id'
+        'book_id', 
+        'chapter_id', 
+        'text', 
+        'index', 
+        'language_id', 
+        'is_trained'
     ];
     
     protected $useTimestamps = false;
@@ -49,6 +50,23 @@ class SentenceModel extends Model
         
 
         return $sentencePair;
+    }
+    public function createItem ($data)
+    {
+        $data = [
+            'book_id' => $data['book_id'], 
+            'chapter_id' => $data['chapter_id'], 
+            'text' => ($data['text']) ? $data['text'] : NULL, 
+            'index' => $data['index'], 
+            'language_id' => $data['language_id'], 
+            'is_trained' => $data['is_trained']
+        ];
+        $this->transBegin();
+        $text_id = $this->insert($data, true);
+
+        $this->transCommit();
+
+        return $text_id;        
     }
     
 }

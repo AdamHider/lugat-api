@@ -54,4 +54,23 @@ class Text extends BaseController
         return $this->respond($result);
     }
 
+    public function exportItem()
+    {
+        $TextModel = model('TextModel');
+        $data = $this->request->getJSON(true);
+
+        $result = $TextModel->textToSentences($data);
+        
+        print_r($result);
+        die;
+        if ($result === 'forbidden') {
+            return $this->failForbidden();
+        }
+        if($TextModel->errors()){
+            return $this->failValidationErrors($TextModel->errors());
+        }
+        return $this->respond($result);
+    }
+    
+
 }
