@@ -16,7 +16,9 @@ class TextModel extends Model
     protected $useSoftDeletes = true;
 
     protected $allowedFields = [
-        'image'
+        'chapter_id', 
+        'language_id', 
+        'text'
     ];
     
     protected $useTimestamps = false;
@@ -24,19 +26,7 @@ class TextModel extends Model
 
     public function getList ($data) 
     {
-
-        /*
-        $DescriptionModel = model('DescriptionModel');
-        
-        if($data['user_id']){
-            $this->join('achievements_usermap', 'achievements_usermap.item_id = achievements.id')
-            ->where('achievements_usermap.user_id', $data['user_id']);
-        }*/
-        
-        $this->table('lgta_texts')->select('lgta_texts.*, 
-            (SELECT word FROM lgt_word_list WHERE lgt_word_list.word_id = lgta_texts.word_id LIMIT 1) as word,
-            (SELECT template FROM lgt_text_sets WHERE lgt_text_sets.set_configuration_id = lgta_texts.set_configuration_id LIMIT 1) as template'
-        );
+        $this->table('lgta_texts')->select('lgta_texts.*');
         
         if(!empty($data['fields']->language_id)){
             $this->where('lgta_texts.language_id', $data['fields']->language_id);
@@ -72,33 +62,44 @@ class TextModel extends Model
         }*/
         return $texts;
     }
-    public function getItem ($text_id) 
+    public function getItem ($data) 
     {
-
-        /*
-        $DescriptionModel = model('DescriptionModel');
-        
-        if($data['user_id']){
-            $this->join('achievements_usermap', 'achievements_usermap.item_id = achievements.id')
-            ->where('achievements_usermap.user_id', $data['user_id']);
-        }*/
-        $text = $this->join('lgt_word_list', 'lgt_word_list.word_id = lgta_texts.word_id')
-        ->join('lgt_text_sets', 'lgt_text_sets.set_configuration_id = lgta_texts.set_configuration_id')
-        ->select('lgta_texts.*, lgt_text_sets.template, lgt_word_list.word')
-        ->where('text_id', $text_id)->get()->getRowArray();
+        $text = $this->select('*')->where(['chapter_id' => $data['chapter_id'], 'language_id' => $data['language_id']])->get()->getRowArray();
         
 
         if(empty($text)){
             return false;
         }
-        $omonymsFilter = (object) array('text' => $text['text']);
-        $text['omonyms'] = $this->getList(['fields' => $omonymsFilter]);
-        /*
-        foreach($achievements as &$achievement){
-            $achievement = array_merge($achievement, $DescriptionModel->getItem('achievement', $achievement['id']));
-            $achievement['image'] = base_url('image/' . $achievement['image']);
-            $achievement['progress'] = $this->calculateProgress($achievement);
-        }*/
         return $text;
+    }
+    public function createItem ($data)
+    {
+        $data = [
+            'chapter_id' => $data['chapter_id'], 
+            'language_id' => $data['language_id'], 
+            'text' => ($data['text']) ? $data['text'] : NULL, 
+        ];
+        $this->transBegin();
+        $text_id = $this->insert($data, true);
+
+        $this->transCommit();
+
+        return $text_id;        
+    }
+    public function updateItem ($data)
+    {
+        $item = $this->getItem($data);
+        if(empty($item['id'])){
+            $data['id'] = $this->createItem($data);
+        } else {
+            $data['id'] = $item['id'];
+        }
+        $this->transBegin();
+        
+        $this->update(['id'=>$data['id']], $data);
+
+        $this->transCommit();
+
+        return $data['id'];        
     }
 }

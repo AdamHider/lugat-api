@@ -8,36 +8,50 @@ class Text extends BaseController
     use ResponseTrait;
     public function getItem()
     {
-        
         $TextModel = model('TextModel');
 
-        $text_id = $this->request->getVar('text_id');
-
-        $text = $TextModel->getItem($text_id);
-
-        if ($text == 'not_found') {
+        $chapter_id = $this->request->getVar('chapter_id');
+        $language_id = $this->request->getVar('language_id');
+        $data = [
+            'chapter_id' => $chapter_id,
+            'language_id' => $language_id
+        ];
+        $result = $TextModel->getItem($data);
+        if(!$result){
             return $this->failNotFound('not_found');
         }
-
-        return $this->respond($text);
+        return $this->respond($result, 200);
     }
     public function getList()
     {
         $TextModel = model('TextModel');
 
-        $fields = $this->request->getVar('fields');
-        $limit = $this->request->getVar('limit');
-        $offset = $this->request->getVar('offset');
+        $chapter_id = $this->request->getVar('chapter_id');
+        $language_id = $this->request->getVar('language_id');
         $data = [
-            'fields' => $fields,
-            'limit' => $limit,
-            'offset' => $offset
+            'chapter_id' => $chapter_id,
+            'language_id' => $language_id
         ];
-        $result = $TextModel->getList($data);
+        $result = $TextModel->getItem($data);
         if(!$result){
             return $this->failNotFound('not_found');
         }
         return $this->respond($result, 200);
+    }
+    public function saveItem()
+    {
+        $TextModel = model('TextModel');
+        $data = $this->request->getJSON(true);
+
+        $result = $TextModel->updateItem($data);
+
+        if ($result === 'forbidden') {
+            return $this->failForbidden();
+        }
+        if($TextModel->errors()){
+            return $this->failValidationErrors($TextModel->errors());
+        }
+        return $this->respond($result);
     }
 
 }

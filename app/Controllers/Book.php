@@ -11,9 +11,14 @@ class Book extends BaseController
         
         $BookModel = model('BookModel');
 
-        $book_id = $this->request->getVar('Book_id');
+        $book_id = $this->request->getVar('book_id');
+        $filter = $this->request->getVar('filter');
+        $data = [
+            'filter' => $filter,
+            'book_id' => $book_id
+        ];
 
-        $book = $BookModel->getItem($book_id);
+        $book = $BookModel->getItem($data);
 
         if ($book == 'not_found') {
             return $this->failNotFound('not_found');
