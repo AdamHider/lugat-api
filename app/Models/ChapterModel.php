@@ -17,7 +17,8 @@ class ChapterModel extends Model
     protected $allowedFields = [
         'book_id', 
         'number', 
-        'title'
+        'title',
+        'is_exported'
     ];
     
     protected $useTimestamps = false;
@@ -26,48 +27,24 @@ class ChapterModel extends Model
     public function getList ($data) 
     {
 
-        $this->table('lgta_book_chapters')->select('lgta_book_chapters.*')->where('lgta_book_chapters.book_id', $data['book_id']);
+        $this->join('lgta_texts', 'lgta_book_chapters.id = lgta_texts.chapter_id', 'left')
+        ->select('lgta_book_chapters.*, COUNT(lgta_texts.id) as total_texts')->where('lgta_book_chapters.book_id', $data['book_id']);
         
-        $chapters = $this->get()->getResultArray();
+        $chapters = $this->groupBy('lgta_book_chapters.id')->get()->getResultArray();
         
         if(empty($chapters)){
             return false;
         }
-        /*
-        foreach($achievements as &$achievement){
-            $achievement = array_merge($achievement, $DescriptionModel->getItem('achievement', $achievement['id']));
-            $achievement['image'] = base_url('image/' . $achievement['image']);
-            $achievement['progress'] = $this->calculateProgress($achievement);
-        }*/
         return $chapters;
     }
-    public function getItem ($chapter_id) 
+    public function getItem ($id) 
     {
-
-        /*
-        $DescriptionModel = model('DescriptionModel');
+        $chapter = $this->where('id', $id)->get()->getRowArray();
         
-        if($data['user_id']){
-            $this->join('achievements_usermap', 'achievements_usermap.item_id = achievements.id')
-            ->where('achievements_usermap.user_id', $data['user_id']);
-        }*/
-        $chapter = $this->join('lgt_word_list', 'lgt_word_list.word_id = lgta_book_chapters.word_id')
-        ->join('lgt_chapter_sets', 'lgt_chapter_sets.set_configuration_id = lgta_book_chapters.set_configuration_id')
-        ->select('lgta_book_chapters.*, lgt_chapter_sets.template, lgt_word_list.word')
-        ->where('chapter_id', $chapter_id)->get()->getRowArray();
-        
-
         if(empty($chapter)){
             return false;
         }
-        $omonymsFilter = (object) array('chapter' => $chapter['chapter']);
-        $chapter['omonyms'] = $this->getList(['fields' => $omonymsFilter]);
-        /*
-        foreach($achievements as &$achievement){
-            $achievement = array_merge($achievement, $DescriptionModel->getItem('achievement', $achievement['id']));
-            $achievement['image'] = base_url('image/' . $achievement['image']);
-            $achievement['progress'] = $this->calculateProgress($achievement);
-        }*/
+        
         return $chapter;
     }
     public function createItem ($data)
@@ -76,7 +53,8 @@ class ChapterModel extends Model
         $data = [
             'book_id' => $data['book_id'], 
             'number' => $data['number'],
-            'title' => null
+            'title' => null,
+            'is_exported' => 0
         ];
         $this->transBegin();
         $book_id = $this->insert($data, true);
@@ -84,5 +62,15 @@ class ChapterModel extends Model
         $this->transCommit();
 
         return $book_id;        
+    }
+    public function updateItem ($data)
+    {
+        $this->transBegin();
+        
+        $this->update(['id'=>$data['id']], $data);
+
+        $this->transCommit();
+
+        return $data['id'];        
     }
 }

@@ -54,7 +54,6 @@ class SentenceModel extends Model
     public function createItem ($data)
     {
         $data = [
-            'book_id' => $data['book_id'], 
             'chapter_id' => $data['chapter_id'], 
             'text' => ($data['text']) ? $data['text'] : NULL, 
             'index' => $data['index'], 

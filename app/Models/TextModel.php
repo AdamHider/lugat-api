@@ -19,7 +19,8 @@ class TextModel extends Model
         'chapter_id', 
         'language_id', 
         'text',
-        'is_done'
+        'is_done',
+        'is_exported'
     ];
     
     protected $useTimestamps = false;
@@ -66,11 +67,11 @@ class TextModel extends Model
     public function getItem ($data) 
     {
         $text = $this->select('*')->where(['chapter_id' => $data['chapter_id'], 'language_id' => $data['language_id']])->get()->getRowArray();
-        
 
         if(empty($text)){
             return false;
         }
+        $text['is_exported'] = (bool) $text['is_exported'];
         return $text;
     }
     public function createItem ($data)

@@ -72,7 +72,7 @@ class BookModel extends Model
         }
         if(!empty($data['filter']->chapter_id)){
             $this->join('lgta_book_chapters', 'lgta_book_chapters.book_id = lgta_books.id')->where('lgta_book_chapters.id', $data['filter']->chapter_id)
-            ->select('lgta_books.*, lgta_book_chapters.number as chapter'); 
+            ->select('lgta_books.*, lgta_book_chapters.number as chapter, lgta_book_chapters.is_exported as chapter_exported'); 
         }
         $book = $this->get()->getRowArray();
         if(empty($book)){
