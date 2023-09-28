@@ -50,7 +50,7 @@ class BookModel extends Model
         if(!empty($data['limit']) && !empty($data['offset'])){
             $this->limit($data['limit'], $data['offset']);
         } else {
-            $this->limit(50, 0);
+            $this->limit(0, 0);
         }
 
         $books = $this->groupBy('lgta_books.id')->orderBy('title')->get()->getResultArray();
