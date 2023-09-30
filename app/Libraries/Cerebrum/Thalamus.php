@@ -3,6 +3,7 @@
 namespace App\Libraries\Cerebrum;
 
 use App\Libraries\Cerebrum\Neuron;
+use App\Libraries\Cerebrum\Cerebellum;
 use App\Libraries\Cerebrum\Cortex\Visio;
 class Thalamus{
 
@@ -26,7 +27,11 @@ class Thalamus{
     public function remember($data)
     {
         $Neuron = new Neuron;
+        $Cerebellum = new Cerebellum;
         $CortexVisio = new Visio;
+        if($data['source_id'] != 0 && $data['target_id'] != 0){
+            $Cerebellum->rememberCahceCreate('visio', implode(',', [$data['source_id'], $data['target_id']]), $data);
+        }
         foreach($data['matches'] as $neuronGroup){
             $sourceTokenList = $CortexVisio->exctractTokens($neuronGroup[$data['languages']['source']]);
             $targetTokenList = $CortexVisio->exctractTokens($neuronGroup[$data['languages']['target']]);

@@ -32,7 +32,7 @@ class SentenceModel extends Model
 
 
 
-    public function getPair () 
+    public function getPair ($data) 
     {
 
         /*
@@ -42,11 +42,13 @@ class SentenceModel extends Model
             $this->join('achievements_usermap', 'achievements_usermap.item_id = achievements.id')
             ->where('achievements_usermap.user_id', $data['user_id']);
         }*/
-        $sentencePair = $this->join('lgta_books b1', 'lgta_sentences.book_id = b1.id')
-        ->join('lgta_books b2', 'b1.relation_id = b2.relation_id AND b1.language_id != b2.language_id')
-        ->join('lgta_sentences s2', 's2.book_id = b2.id AND s2.`index` = lgta_sentences.`index`')
-        ->select('lgta_sentences.text as source_text, s2.text as target_text')
-        ->where('lgta_sentences.is_trained', 0)->limit(1)->get()->getRowArray();
+        $sentencePair = $this->join('lgta_sentences s2', 'lgta_sentences.chapter_id = s2.chapter_id AND s2.`index` = lgta_sentences.`index`')
+        ->select('lgta_sentences.id as source_id, lgta_sentences.text as source_text, s2.id as target_id, s2.text as target_text')
+        ->where([
+            'lgta_sentences.is_trained'  => 0, 
+            'lgta_sentences.language_id' => $data['source_language_id'],
+            's2.language_id' => $data['target_language_id']
+        ])->limit(1)->get()->getRowArray();
         
 
         return $sentencePair;
@@ -66,6 +68,16 @@ class SentenceModel extends Model
         $this->transCommit();
 
         return $text_id;        
+    }
+    public function updateItem ($data)
+    {
+        $this->transBegin();
+        
+        $this->update(['id'=>$data['id']], $data);
+
+        $this->transCommit();
+
+        return $data['id'];        
     }
     
 }

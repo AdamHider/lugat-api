@@ -67,27 +67,27 @@ class Neuron{
     public function save($neuron)
     {
         $db = \Config\Database::connect();
-            $sql = "
-                INSERT INTO
-                    crbrm_neurons
-                SET
-                    id              = NULL, 
-                    axon_id         = ".(int) $neuron['axon_id'].", 
-                    core            = ".$db->escape($neuron['core']).", 
-                    coords          = ".(float) $neuron['coords'].", 
-                    position        = ".(float) $neuron['position'].", 
-                    is_compound     = ".((!$neuron['is_compound']) ? 'NULL' : 1).", 
-                    frequency       = ".(int) $neuron['frequency'].",
-                    axon_strength   = ".(int) $neuron['axon_strength'].",
-                    language_id     = ".(int) $neuron['language_id']."
-                ON DUPLICATE KEY UPDATE
-                    coords          = ".(float) $neuron['coords'].", 
-                    position        = ".(float) $neuron['position'].", 
-                    is_compound     = ".((!$neuron['is_compound']) ? 'NULL' : 1).", 
-                    frequency       = ".(int) $neuron['frequency'].",
-                    axon_strength   = ".(int) $neuron['axon_strength'].",
-                    language_id     = ".(int) $neuron['language_id']."
-            ";
+        $sql = "
+            INSERT INTO
+                crbrm_neurons
+            SET
+                id              = NULL, 
+                axon_id         = ".(int) $neuron['axon_id'].", 
+                core            = ".$db->escape($neuron['core']).", 
+                coords          = ".(float) $neuron['coords'].", 
+                position        = ".(float) $neuron['position'].", 
+                is_compound     = ".((!$neuron['is_compound']) ? 'NULL' : 1).", 
+                frequency       = ".(int) $neuron['frequency'].",
+                axon_strength   = ".(int) $neuron['axon_strength'].",
+                language_id     = ".(int) $neuron['language_id']."
+            ON DUPLICATE KEY UPDATE
+                coords          = ".(float) $neuron['coords'].", 
+                position        = ".(float) $neuron['position'].", 
+                is_compound     = ".((!$neuron['is_compound']) ? 'NULL' : 1).", 
+                frequency       = ".(int) $neuron['frequency'].",
+                axon_strength   = ".(int) $neuron['axon_strength'].",
+                language_id     = ".(int) $neuron['language_id']."
+        ";
         return $db->query($sql);
     }
     public function getLastAxonId()

@@ -3,7 +3,7 @@
 namespace App\Libraries\Cerebrum\Cortex;
 
 class Visio{
-    protected $skip = ['«', '»', '!', '?', '.', ',', ';', ':', '…', '“'];
+    protected $skip = ['«', '»', '!', '?', '.', ',', ';', ':', '…', '“', '—'];
    
     public function normalizeOutput($predictionList)
     {
@@ -66,7 +66,7 @@ class Visio{
         }
         $sentence = str_replace('  ',  ' ',$sentence);
         $sentence = str_replace('ё', 'е', $sentence);
-        return explode(' ', $sentence);
+        return explode(' ', trim($sentence));
     }
     public function getSurroundingTokens($index, $tokenList)
     {
