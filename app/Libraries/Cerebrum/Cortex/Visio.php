@@ -56,6 +56,7 @@ class Visio{
     }
     public function tokenize($sentence)
     {
+        $result = [];
         $sentence = mb_strtolower($sentence);
         $sentence = str_replace(array("\n", "\r"), '', $sentence);
         foreach($this->skip as $item){
@@ -66,7 +67,14 @@ class Visio{
         }
         $sentence = str_replace('  ',  ' ',$sentence);
         $sentence = str_replace('ё', 'е', $sentence);
-        return explode(' ', trim($sentence));
+        $tokenList = explode(' ', trim($sentence));
+        foreach($tokenList as $index => $token){
+            $result[] = [
+                'token' => $token,
+                'position' => $this->calculatePosition(count($tokenList), $index)
+            ];
+        }
+        return $result;
     }
     public function getSurroundingTokens($index, $tokenList)
     {

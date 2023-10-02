@@ -30,6 +30,7 @@ class Neuron{
         }
         return $db->query($sql)->getResultArray();
     }
+    
     public function getAxonId($sourceTokenList, $targetTokenList)
     {
         $db = \Config\Database::connect();
@@ -117,6 +118,52 @@ class Neuron{
         $quantifier = 1 - (($frequency - 1) / $frequency );
         $value = ($newPosition - $oldPosition) * $quantifier;
         return round($oldPosition + $value, 4);
+    }
+
+
+    public function find1($neuron, $target_language, $context = [], $onlyFirstAxon = false)
+    {
+        $db = \Config\Database::connect();
+        $sql = "
+            SELECT p1.axon_id, d1.token AS core, p1.position, ABS(p.position - ".$neuron['position'].") as `rank`
+            FROM crbrm_neurons_dict d
+            JOIN crbrm_neurons_position p ON d.id = p.token_id  
+            JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
+            JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
+            WHERE d.token = '".$neuron['core']."' AND d.language_id = ".$neuron['language_id']."
+            ORDER BY p1.frequency DESC, `rank` LIMIT 1
+        ";
+        /*
+        if($onlyFirstAxon){
+            $sql = "SELECT 
+            d.id, axon_id, d.token as core, p.position
+            FROM crbrm_neurons_dict d JOIN crbrm_neurons_position p ON d.id = p.token_id WHERE p.axon_id = (SELECT axon_id FROM ($sql)a GROUP BY axon_id LIMIT 1) AND d.language_id = $target_language";
+        }*/
+        return $db->query($sql)->getResultArray();
+    }
+
+    
+    public function getDictItem($token, $languageId)
+    {
+        $db = \Config\Database::connect();
+        $sql = "
+            SELECT * FROM crbrm_neurons_dict WHERE token = $token AND language_id = $languageId
+        ";
+        return $db->query($sql)->getResultArray();
+    }
+    public function createDictItem($token, $languageId)
+    {
+        $db = \Config\Database::connect();
+        $sql = "
+            INSERT INTO
+            crbrm_neurons_dict
+            SET
+                id          = NULL, 
+                token       = ".$db->escape($token).", 
+                language_id = ".(int) $languageId."
+        ";
+        $db->query($sql);
+        return $db->insertID();
     }
 
 }

@@ -17,7 +17,7 @@ class Thalamus{
             $position = $CortexVisio->calculatePosition(count($tokenList), $index);
             $neuronPrototype = $Neuron->createEmpty(null, $token, $position, $data['source']['language_id']);
             $context = $CortexVisio->getSurroundingTokens($index, $tokenList);
-            $neurons = $Neuron->find($neuronPrototype, $data['target']['language_id'], $context, 1);
+            $neurons = $Neuron->find1($neuronPrototype, $data['target']['language_id'], $context, 1);
             $predictions = array_merge($predictions, $neurons);
         }
         $result = ["text" => $CortexVisio->normalizeOutput($predictions)];
@@ -59,9 +59,55 @@ class Thalamus{
         }
         return true;
     }
+    public function train($sentencePair)
+    {
+        $Neuron = new Neuron;
+        $Cerebellum = new Cerebellum;
+        $CortexVisio = new Visio;
+
+        $sourceTokenList = $CortexVisio->tokenize($sentencePair['source']['text']);
+        $targetTokenList = $CortexVisio->tokenize($sentencePair['target']['text']);
+
+        foreach($sourceTokenList as &$sourceToken){
+            $tokenId = $Neuron->getDictItem($sourceToken['token'], $sentencePair['source']['language_id']); 
+            if(empty($axonId)){
+                $tokenId = $Neuron->createDictItem($sourceToken['token'], $sentencePair['source']['language_id']); 
+            }
+            $sourceToken['id'] = $tokenId;
+            print_r($sourceToken);
+            die;
+
+        }
+        foreach($sentencePair as $sentenceObject){
+            $axonId = $Neuron->getAxonId($sourceTokenList, $targetTokenList);
+            if(empty($axonId)){
+                $axonId = $Neuron->getLastAxonId();
+            }
+            foreach($neuronGroup as $languageId => $neuronList){
+                foreach($neuronList['neurons'] as $index => $neuron){
+                    if($neuronList['isFixedPosition']){
+                        $position = $CortexVisio->calculatePosition(count($data['tokens'][$languageId]), $neuron['index'], $neuronList['neurons']);
+                    } else {
+                        $position = $CortexVisio->calculatePosition(count($data['tokens'][$languageId]), $neuron['index']);
+                    }
+                    if(empty($neuron['axon_id'])){
+                        $neuron = $Neuron->createEmpty($axonId, $neuron['core'], $position, $languageId);
+                    }
+                    $neuron['position'] = $Neuron->recalculatePosition($position, $neuron['position'], $neuron['frequency']);
+                    $neuron['frequency']++;
+                    if(!$Neuron->save($neuron)){
+                        return false;
+                    };
+                }
+            }
+        }
+        return true;
+    }
     public function analyze($data)
     {
+
         $CortexVisio = new Visio;
+        $this->train($data);
         $result = [
             'tokens' => [],
             'matches' => [],
