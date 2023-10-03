@@ -14,14 +14,12 @@ class Thalamus{
         $tokenList = $CortexVisio->tokenize($data['source']['text']);
         $predictions = [];
         foreach($tokenList as $index => $token){
-            $position = $CortexVisio->calculatePosition(count($tokenList), $index);
-            $neuronPrototype = $Neuron->createEmpty(null, $token, $position, $data['source']['language_id']);
+            $token['language_id'] = $data['source']['language_id'];
             $context = $CortexVisio->getSurroundingTokens($index, $tokenList);
-            $neurons = $Neuron->find1($neuronPrototype, $data['target']['language_id'], $context, 1);
+            $neurons = $Neuron->find($token, $data['target']['language_id'], $context, 1);
             $predictions = array_merge($predictions, $neurons);
         }
         $result = ["text" => $CortexVisio->normalizeOutput($predictions)];
-
         return $result;
     }
     public function remember($data)
@@ -65,49 +63,57 @@ class Thalamus{
         $Cerebellum = new Cerebellum;
         $CortexVisio = new Visio;
 
-        $sourceTokenList = $CortexVisio->tokenize($sentencePair['source']['text']);
-        $targetTokenList = $CortexVisio->tokenize($sentencePair['target']['text']);
 
+        list($sourceTokenList, $targetTokenList) = $this->prepareDict($sentencePair); 
+        
         foreach($sourceTokenList as &$sourceToken){
-            $tokenId = $Neuron->getDictItem($sourceToken['token'], $sentencePair['source']['language_id']); 
-            if(empty($axonId)){
-                $tokenId = $Neuron->createDictItem($sourceToken['token'], $sentencePair['source']['language_id']); 
-            }
-            $sourceToken['id'] = $tokenId;
-            print_r($sourceToken);
-            die;
-
-        }
-        foreach($sentencePair as $sentenceObject){
-            $axonId = $Neuron->getAxonId($sourceTokenList, $targetTokenList);
-            if(empty($axonId)){
-                $axonId = $Neuron->getLastAxonId();
-            }
-            foreach($neuronGroup as $languageId => $neuronList){
-                foreach($neuronList['neurons'] as $index => $neuron){
-                    if($neuronList['isFixedPosition']){
-                        $position = $CortexVisio->calculatePosition(count($data['tokens'][$languageId]), $neuron['index'], $neuronList['neurons']);
-                    } else {
-                        $position = $CortexVisio->calculatePosition(count($data['tokens'][$languageId]), $neuron['index']);
-                    }
-                    if(empty($neuron['axon_id'])){
-                        $neuron = $Neuron->createEmpty($axonId, $neuron['core'], $position, $languageId);
-                    }
-                    $neuron['position'] = $Neuron->recalculatePosition($position, $neuron['position'], $neuron['frequency']);
-                    $neuron['frequency']++;
-                    if(!$Neuron->save($neuron)){
-                        return false;
-                    };
+            foreach($targetTokenList as &$targetToken){
+                $axonId = $Neuron->getAxonId($sourceToken, $targetToken);
+                if(empty($axonId)){
+                    $axonId = $Neuron->getLastAxonId();
+                } else {
+                    $Neuron->decreaseAxonFrequency($axonId);  
                 }
+                $sourceToken['axon_id'] = $axonId;
+                $targetToken['axon_id'] = $axonId;
+                $Neuron->save($sourceToken);
+                $Neuron->save($targetToken);
             }
         }
         return true;
     }
+    private function prepareDict($sentencePair)
+    {
+        $Neuron = new Neuron;
+        $CortexVisio = new Visio;
+
+        $sourceTokenList = $CortexVisio->tokenize($sentencePair['source']['text']);
+        $targetTokenList = $CortexVisio->tokenize($sentencePair['target']['text']);
+
+        foreach($sourceTokenList as &$sourceToken){
+            $tokenId = $Neuron->getDictItemId($sourceToken['token'], $sentencePair['source']['language_id']); 
+            if(empty($tokenId)){
+                $tokenId = $Neuron->createDictItem($sourceToken['token'], $sentencePair['source']['language_id']); 
+            }
+            $sourceToken['id'] = $tokenId;
+            $sourceToken['language_id'] = $sentencePair['source']['language_id'];
+        }
+        foreach($targetTokenList as &$targetToken){
+            $tokenId = $Neuron->getDictItemId($targetToken['token'], $sentencePair['target']['language_id']); 
+            if(empty($tokenId)){
+                $tokenId = $Neuron->createDictItem($targetToken['token'], $sentencePair['target']['language_id']); 
+            }
+            $targetToken['id'] = $tokenId;
+            $targetToken['language_id'] = $sentencePair['target']['language_id'];
+        }
+        return [$sourceTokenList, $targetTokenList];
+    }
+
     public function analyze($data)
     {
 
         $CortexVisio = new Visio;
-        $this->train($data);
+        return $this->train($data);
         $result = [
             'tokens' => [],
             'matches' => [],
