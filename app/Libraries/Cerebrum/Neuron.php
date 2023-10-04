@@ -78,6 +78,9 @@ class Neuron{
     public function find($neuron, $target_language, $context = [], $onlyFirstAxon = false)
     {
         $db = \Config\Database::connect();
+        if(isset($context['previousTokens'])) $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".implode("','", $context['previousTokens'])."') AND t2.position < ".$neuron['position'].")";
+        if(isset($context['nextTokens']))     $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".implode("','", $context['nextTokens'])."') AND t2.position > ".$neuron['position'].")";
+        
         $sql = "
             SELECT p1.axon_id, d1.token AS core, AVG(p1.position) AS position, ABS(p.position - ".$neuron['position'].") as `rank`, SUM(p1.frequency) as `rank1`
             FROM crbrm_neurons_dict d
@@ -87,7 +90,7 @@ class Neuron{
             WHERE d.token =  ".$db->escape($neuron['token'])." AND d.language_id = ".$neuron['language_id']."
             GROUP BY p1.token_id    
             ORDER BY `rank1` DESC , `rank`
-            LIMIT 2
+            LIMIT 1
         ";
         return $db->query($sql)->getResultArray();
     }
@@ -117,13 +120,13 @@ class Neuron{
         $db->query($sql);
         return $db->insertID();
     }
-    public function decreaseAxonFrequency($axonId)
+    public function decreaseAxonFrequency($tokenId, $axonId)
     {
         $db = \Config\Database::connect();
         $sql = "
             UPDATE crbrm_neurons_position
-            SET frequency = frequency - 1/frequency
-            WHERE axon_id = ".$axonId."
+            SET frequency = frequency - frequency/10
+            WHERE token_id = $tokenId AND axon_id != ".$axonId."
         ";
         return $db->query($sql);
     }

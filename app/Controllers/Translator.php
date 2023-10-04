@@ -46,5 +46,17 @@ class Translator extends BaseController
         }
         return $this->respond($result, 200);
     }
+    public function feed()
+    {
+        $Thalamus = new Thalamus;
+
+        $data = $this->request->getJSON(true);
+        
+        $result = $Thalamus->feed();
+        if(!$result){
+            return $this->failNotFound('not_found');
+        }
+        return $this->respond($result, 200);
+    }
 
 }

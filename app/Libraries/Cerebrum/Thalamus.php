@@ -5,6 +5,7 @@ namespace App\Libraries\Cerebrum;
 use App\Libraries\Cerebrum\Neuron;
 use App\Libraries\Cerebrum\Cerebellum;
 use App\Libraries\Cerebrum\Cortex\Visio;
+ini_set('max_execution_time', 0); 
 class Thalamus{
 
     public function predict($data)
@@ -60,9 +61,6 @@ class Thalamus{
     public function train($sentencePair)
     {
         $Neuron = new Neuron;
-        $Cerebellum = new Cerebellum;
-        $CortexVisio = new Visio;
-
 
         list($sourceTokenList, $targetTokenList) = $this->prepareDict($sentencePair); 
         
@@ -72,7 +70,8 @@ class Thalamus{
                 if(empty($axonId)){
                     $axonId = $Neuron->getLastAxonId();
                 } else {
-                    $Neuron->decreaseAxonFrequency($axonId);  
+                    $Neuron->decreaseAxonFrequency($sourceToken['id'], $axonId);  
+                    $Neuron->decreaseAxonFrequency($targetToken['id'], $axonId);  
                 }
                 $sourceToken['axon_id'] = $axonId;
                 $targetToken['axon_id'] = $axonId;
@@ -111,21 +110,36 @@ class Thalamus{
 
     public function analyze($data)
     {
-
-        $CortexVisio = new Visio;
         return $this->train($data);
-        $result = [
-            'tokens' => [],
-            'matches' => [],
-            'languages' => [
-                'source' => $data['source']['language_id'],
-                'target' => $data['target']['language_id']
-            ]
-        ];
-        $result['tokens'][$data['source']['language_id']] = $CortexVisio->tokenize($data['source']['text']);
-        $result['tokens'][$data['target']['language_id']] = $CortexVisio->tokenize($data['target']['text']);
-        $result['matches'] = $this->getMatches($result);
-        return $result;
+    }
+    public function feed()
+    {
+        $source = 'fra1.txt';
+        $fp = fopen(base_url().$source, 'r');
+
+        while ( !feof($fp) )
+        {
+            $line = fgets($fp, 2048);
+
+            $data_txt = str_getcsv($line, "\t");
+            if(!isset($data_txt[0]) || !isset($data_txt[1])){
+                continue;
+            }
+            $data = [
+                'source' => [
+                    'text' => $data_txt[0],
+                    'language_id' => 4
+                ],
+                'target' => [
+                    'text' => $data_txt[1],
+                    'language_id' => 5
+                ]
+            ];
+            //Get First Line of Data over here
+            $this->train($data);
+        }                              
+
+        fclose($fp);
     }
     public function getMatches($data)
     {
