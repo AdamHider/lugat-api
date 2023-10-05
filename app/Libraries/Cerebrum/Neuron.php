@@ -64,12 +64,14 @@ class Neuron{
     {
         $db = \Config\Database::connect();
         $sql = "
-            SELECT DISTINCT p.axon_id
-            FROM crbrm_neurons_dict d
-            JOIN crbrm_neurons_position p ON d.id = p.token_id
-            JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id
-            JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id != d.language_id
-            WHERE  d.id IN(".implode(',',$tokenSet).") AND d1.id IN (".implode(',',$tokenSet).")
+            SELECT 
+                p.axon_id, (SELECT GROUP_CONCAT(DISTINCT p1.token_id) FROM crbrm_neurons_position p1 WHERE p.axon_id = p1.axon_id) tokens
+            FROM
+                crbrm_neurons_position p
+            WHERE
+                p.token_id IN(".implode(',',$tokenSet).")  
+            GROUP BY axon_id    
+            HAVING tokens = '".implode(',',$tokenSet)."'    
         ";
         $result = $db->query($sql)->getRow();
         if(isset($result->axon_id)){
@@ -137,15 +139,22 @@ class Neuron{
         $db->query($sql);
         return $db->insertID();
     }
-    public function decreaseAxonFrequency($tokenId, $axonId)
+    public function decreaseAxonFrequency($tokenSet, $axonId)
     {
         $db = \Config\Database::connect();
         $sql = "
             UPDATE IGNORE crbrm_neurons_position
             SET frequency = frequency - frequency/10
-            WHERE token_id = $tokenId AND axon_id != ".(int) $axonId."
+            WHERE token_id IN (".implode(',',$tokenSet).") AND axon_id != ".(int) $axonId."
         ";
         return $db->query($sql);
+    }
+
+    public function clearMemory()
+    {
+        $db = \Config\Database::connect();
+        $db->query("TRUNCATE crbrm_neurons_dict");
+        $db->query("TRUNCATE crbrm_neurons_position");
     }
 
 }

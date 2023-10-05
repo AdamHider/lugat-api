@@ -69,7 +69,6 @@ class Thalamus{
         $targetCombinations = $CortexVisio->getSentenceTokenCombinations($targetTokenList);
 
         $mergedCombinations = $CortexVisio->multisortCombinations([$sourceCombinations, $targetCombinations]);
-
         
         foreach($mergedCombinations as &$combinationObject){
             $is_new = false;
@@ -78,12 +77,18 @@ class Thalamus{
             if(empty($axonId)){
                 $is_new = true;
                 $axonId = $Neuron->getLastAxonId();
-            } 
+            } else {
+                if($is_new) $Neuron->decreaseAxonFrequency($ids, $token['axon_id']); 
+                /*
+                $Neuron->getGroupAxonIdTest($combinationObject);
+                print_r($combinationObject);
+                die;*/
+            }
             foreach($combinationObject as &$token){
                 $token['axon_id'] = $axonId;
                 $Neuron->save($token);
-                if($is_new) $Neuron->decreaseAxonFrequency($token['id'], $token['axon_id']); 
             }
+            //if($is_new) $Neuron->decreaseAxonFrequency($ids, $token['axon_id']); 
         }
         return true;
     }
@@ -120,6 +125,8 @@ class Thalamus{
     }
     public function feed()
     {
+        $Neuron = new Neuron;
+        $Neuron->clearMemory();
         $source = 'fra1.txt';
         $fp = fopen(base_url().$source, 'r');
 
@@ -134,11 +141,11 @@ class Thalamus{
             $data = [
                 'source' => [
                     'text' => $data_txt[0],
-                    'language_id' => 4
+                    'language_id' => 1
                 ],
                 'target' => [
                     'text' => $data_txt[1],
-                    'language_id' => 5
+                    'language_id' => 2
                 ]
             ];
             //Get First Line of Data over here

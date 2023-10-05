@@ -1,10 +1,8 @@
-I love it!	J'adore ça!
-I mean it!	Je suis sérieux!
-I mean it.	Je suis sérieux.
-I saw you.	Je te vis.
-I saw you.	Je t'ai vue.
-I saw you.	Je t'ai vu.
-I love Tom.	J'aime Tom.
-I love you.	Je t'aime!
-I love you.	Je t'adore.
-I loved it.	J'adorais ça.
+Men onı sevem!	Я люблю его!
+Men anamnı sevem!	Я люблю свою маму!
+Men onı körem!	Я вижу его!
+Onı körem!	Я вижу его!
+Anamnı kelip körerim.	Я приду и увижу маму.
+Seni sevem!	Я люблю тебя!
+Memet dostunen kelip oturdı.	Мемет со своим другом пришёл и сел.
+Arabada evime ketem.	Я еду домой на машине.
