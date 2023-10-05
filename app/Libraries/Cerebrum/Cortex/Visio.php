@@ -68,6 +68,11 @@ class Visio{
         $sentence = str_replace('  ',  ' ',$sentence);
         $sentence = str_replace('ё', 'е', $sentence);
         $tokenList = explode(' ', trim($sentence));
+        return $this->assetPossitions($tokenList);
+    }
+    public function assetPossitions($tokenList)
+    {
+        $result = [];
         foreach($tokenList as $index => $token){
             $result[] = [
                 'token' => $token,
@@ -87,6 +92,32 @@ class Visio{
         return $result;
     }
     
+    public function getSentenceTokenCombinations($tokenList)
+    {
+        $results = array(array( ));
+
+        foreach ($tokenList as $index => $values)
+            foreach ($results as $combination)
+                    array_push($results, array_merge($combination, array($values))); 
+        array_shift($results);
+        return $results;
+    }
+    public function multisortCombinations($arrays, $i = 0)
+    {
+        if ( !isset($arrays[$i]) ) return array();
+        if ( $i == count($arrays) - 1) return $arrays[$i];
+        $tmp = $this->multisortCombinations($arrays, $i + 1);
+        $result = array();
+        foreach ($arrays[$i] as $v) 
+            foreach ($tmp as $t) 
+                $result[] = is_array($t) ? 
+                    array_merge($v, $t) :
+                    array($v, $t);
+            
+        
+        return $result;
+    }
+
 }
 
 

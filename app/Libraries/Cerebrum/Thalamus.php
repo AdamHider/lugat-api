@@ -61,22 +61,28 @@ class Thalamus{
     public function train($sentencePair)
     {
         $Neuron = new Neuron;
+        $CortexVisio = new Visio;
 
         list($sourceTokenList, $targetTokenList) = $this->prepareDict($sentencePair); 
         
-        foreach($sourceTokenList as &$sourceToken){
-            foreach($targetTokenList as &$targetToken){
-                $axonId = $Neuron->getAxonId($sourceToken, $targetToken);
-                if(empty($axonId)){
-                    $axonId = $Neuron->getLastAxonId();
-                } else {
-                    $Neuron->decreaseAxonFrequency($sourceToken['id'], $axonId);  
-                    $Neuron->decreaseAxonFrequency($targetToken['id'], $axonId);  
-                }
-                $sourceToken['axon_id'] = $axonId;
-                $targetToken['axon_id'] = $axonId;
-                $Neuron->save($sourceToken);
-                $Neuron->save($targetToken);
+        $sourceCombinations = $CortexVisio->getSentenceTokenCombinations($sourceTokenList);
+        $targetCombinations = $CortexVisio->getSentenceTokenCombinations($targetTokenList);
+
+        $mergedCombinations = $CortexVisio->multisortCombinations([$sourceCombinations, $targetCombinations]);
+
+        
+        foreach($mergedCombinations as &$combinationObject){
+            $is_new = false;
+            $ids = array_column($combinationObject, 'id');
+            $axonId = $Neuron->getGroupAxonId($ids);
+            if(empty($axonId)){
+                $is_new = true;
+                $axonId = $Neuron->getLastAxonId();
+            } 
+            foreach($combinationObject as &$token){
+                $token['axon_id'] = $axonId;
+                $Neuron->save($token);
+                if($is_new) $Neuron->decreaseAxonFrequency($token['id'], $token['axon_id']); 
             }
         }
         return true;

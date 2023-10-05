@@ -60,6 +60,23 @@ class Neuron{
         }
         return null;
     }
+    public function getGroupAxonId($tokenSet)
+    {
+        $db = \Config\Database::connect();
+        $sql = "
+            SELECT DISTINCT p.axon_id
+            FROM crbrm_neurons_dict d
+            JOIN crbrm_neurons_position p ON d.id = p.token_id
+            JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id
+            JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id != d.language_id
+            WHERE  d.id IN(".implode(',',$tokenSet).") AND d1.id IN (".implode(',',$tokenSet).")
+        ";
+        $result = $db->query($sql)->getRow();
+        if(isset($result->axon_id)){
+            return (int) $result->axon_id;
+        }
+        return null;
+    }
     public function getLastAxonId()
     {
         $db = \Config\Database::connect();
@@ -124,9 +141,9 @@ class Neuron{
     {
         $db = \Config\Database::connect();
         $sql = "
-            UPDATE crbrm_neurons_position
+            UPDATE IGNORE crbrm_neurons_position
             SET frequency = frequency - frequency/10
-            WHERE token_id = $tokenId AND axon_id != ".$axonId."
+            WHERE token_id = $tokenId AND axon_id != ".(int) $axonId."
         ";
         return $db->query($sql);
     }
