@@ -23,6 +23,9 @@ class Visio{
         $predictionNormalized = $this->groupBy($preResult, 'core');
         foreach($predictionNormalized as $token){
             $result[] = $token['core'];
+            if($token['core'] == '</end>') {
+                //break;
+             }
         }
         return implode(' ', $result);
     }

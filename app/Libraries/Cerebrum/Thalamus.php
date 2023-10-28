@@ -1,11 +1,12 @@
 <?php
-
 namespace App\Libraries\Cerebrum;
 
 use App\Libraries\Cerebrum\Neuron;
 use App\Libraries\Cerebrum\Cerebellum;
 use App\Libraries\Cerebrum\Cortex\Visio;
-ini_set('max_execution_time', 0); 
+
+CONST SKIP_START_END_POINTERS = 1;
+
 class Thalamus{
 
     public function predict($data)
@@ -15,6 +16,10 @@ class Thalamus{
         $tokenList = $CortexVisio->tokenize($data['source']['text']);
         $predictions = [];
         foreach($tokenList as $index => $token){
+            if($token['token'] == '<start>' || $token['token'] == '</end>'){
+                continue;
+            }
+            $neurons = [];
             $token['language_id'] = $data['source']['language_id'];
             $context = $CortexVisio->getSurroundingTokens($index, $tokenList);
             $neurons = $Neuron->find($token, $data['target']['language_id'], $context, 1);
@@ -84,12 +89,12 @@ class Thalamus{
                 print_r($combinationObject);
                 die;*/
             }
+            if($is_new) $Neuron->decreaseAxonFrequency($ids, $axonId); 
             foreach($combinationObject as &$token){
                 $token['axon_id'] = $axonId;
                 $Neuron->save($token);
-                //if($is_new) $Neuron->decreaseAxonFrequency($token['id'], $token['axon_id']); 
+                //if($is_new) $Neuron->decreaseAxonFrequency([$token['id']], $token['axon_id']); 
             }
-            //if($is_new) $Neuron->decreaseAxonFrequency($ids, $token['axon_id']); 
         }
         return true;
     }
@@ -143,11 +148,11 @@ class Thalamus{
             $data = [
                 'source' => [
                     'text' => $data_txt[0],
-                    'language_id' => 1
+                    'language_id' => 4
                 ],
                 'target' => [
                     'text' => $data_txt[1],
-                    'language_id' => 2
+                    'language_id' => 5
                 ]
             ];
             //Get First Line of Data over here
