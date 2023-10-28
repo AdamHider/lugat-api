@@ -95,19 +95,18 @@ class Neuron{
     public function find($neuron, $target_language, $context = [], $onlyFirstAxon = false)
     {
         $db = \Config\Database::connect();
-        if(isset($context['previousTokens'])) $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".implode("','", $context['previousTokens'])."') AND t2.position < ".$neuron['position'].")";
-        if(isset($context['nextTokens']))     $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".implode("','", $context['nextTokens'])."') AND t2.position > ".$neuron['position'].")";
+        //if(isset($context['previousTokens'])) $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".implode("','", $context['previousTokens'])."') AND t2.position < ".$neuron['position'].")";
+        //if(isset($context['nextTokens']))     $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".implode("','", $context['nextTokens'])."') AND t2.position > ".$neuron['position'].")";
         
         $sql = "
-            SELECT p1.axon_id, d1.token AS core, AVG(p1.position) AS position, ABS(p.position - ".$neuron['position'].") as `rank`, SUM(p1.frequency) as `rank1`
+            SELECT p1.axon_id, d1.token AS core, AVG(p1.position) AS position, ABS(p.position - ".$neuron['position'].") as `rank`, p1.frequency as `rank1`
             FROM crbrm_neurons_dict d
             JOIN crbrm_neurons_position p ON d.id = p.token_id  
             JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
             JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
             WHERE d.token =  ".$db->escape($neuron['token'])." AND d.language_id = ".$neuron['language_id']."
-            GROUP BY p1.token_id    
+            GROUP BY p1.id    
             ORDER BY `rank1` DESC , `rank`
-            LIMIT 1
         ";
         return $db->query($sql)->getResultArray();
     }
@@ -146,6 +145,13 @@ class Neuron{
             WHERE token_id = $tokenId AND axon_id != ".(int) $axonId."
         ";
         return $db->query($sql);
+    }
+    public function forgetAll()
+    {
+        $db = \Config\Database::connect();
+        $db->query("TRUNCATE crbrm_neurons_dict");
+        $db->query("TRUNCATE crbrm_neurons_position");
+        return;
     }
 
 }

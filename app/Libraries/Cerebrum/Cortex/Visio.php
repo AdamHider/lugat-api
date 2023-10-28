@@ -8,8 +8,19 @@ class Visio{
     public function normalizeOutput($predictionList)
     {
         $result = [];
-        usort($predictionList, function($a, $b){ return $a['position'] <=> $b['position']; });
-        $predictionNormalized = $this->groupBy($predictionList, 'core');
+        $preResult = [];
+        $maxPosition = max(array_map(fn($o) => $o['position'], $predictionList));
+        $position = 0;
+        
+        while($position <= $maxPosition){
+            $filter = array_filter($predictionList, function ($item) use ($position) {
+                return $item['position'] == $position;
+              });
+            usort($filter, fn($a, $b) => $a['rank1'] < $b['rank1']);  
+            $preResult[] = $filter[0];
+            $position++;
+        }
+        $predictionNormalized = $this->groupBy($preResult, 'core');
         foreach($predictionNormalized as $token){
             $result[] = $token['core'];
         }
@@ -67,6 +78,7 @@ class Visio{
         }
         $sentence = str_replace('  ',  ' ',$sentence);
         $sentence = str_replace('ё', 'е', $sentence);
+        $sentence = '<start> '.$sentence.' </end>'; 
         $tokenList = explode(' ', trim($sentence));
         return $this->assetPossitions($tokenList);
     }
@@ -76,7 +88,7 @@ class Visio{
         foreach($tokenList as $index => $token){
             $result[] = [
                 'token' => $token,
-                'position' => $this->calculatePosition(count($tokenList), $index)
+                'position' => $index// $this->calculatePosition(count($tokenList), $index)
             ];
         }
         return $result;
@@ -115,6 +127,16 @@ class Visio{
                     array($v, $t);
             
         
+        return $result;
+    }
+    public function multisortCombinations1($tokenList, $tokenList1)
+    {
+        $result = [];
+        foreach($tokenList as $sourceToken){
+            foreach($tokenList1 as $targetToken){
+                $result[] = [$sourceToken, $targetToken];
+            }
+        }
         return $result;
     }
 

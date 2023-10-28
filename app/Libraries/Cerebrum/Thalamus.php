@@ -64,11 +64,12 @@ class Thalamus{
         $CortexVisio = new Visio;
 
         list($sourceTokenList, $targetTokenList) = $this->prepareDict($sentencePair); 
-        
+        /*
         $sourceCombinations = $CortexVisio->getSentenceTokenCombinations($sourceTokenList);
         $targetCombinations = $CortexVisio->getSentenceTokenCombinations($targetTokenList);
+*/
 
-        $mergedCombinations = $CortexVisio->multisortCombinations([$sourceCombinations, $targetCombinations]);
+        $mergedCombinations = $CortexVisio->multisortCombinations1($sourceTokenList, $targetTokenList);
 
         
         foreach($mergedCombinations as &$combinationObject){
@@ -82,7 +83,7 @@ class Thalamus{
             foreach($combinationObject as &$token){
                 $token['axon_id'] = $axonId;
                 $Neuron->save($token);
-                if($is_new) $Neuron->decreaseAxonFrequency($token['id'], $token['axon_id']); 
+                //if($is_new) $Neuron->decreaseAxonFrequency($token['id'], $token['axon_id']); 
             }
         }
         return true;
@@ -120,6 +121,9 @@ class Thalamus{
     }
     public function feed()
     {
+        $Neuron = new Neuron;
+        $Neuron->forgetAll();
+
         $source = 'fra1.txt';
         $fp = fopen(base_url().$source, 'r');
 

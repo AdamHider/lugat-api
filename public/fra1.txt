@@ -1,10 +1,7 @@
-I love it!	J'adore ça!
-I mean it!	Je suis sérieux!
-I mean it.	Je suis sérieux.
-I saw you.	Je te vis.
-I saw you.	Je t'ai vue.
-I saw you.	Je t'ai vu.
-I love Tom.	J'aime Tom.
-I love you.	Je t'aime!
-I love you.	Je t'adore.
-I loved it.	J'adorais ça.
+I like you.	Men seni begenem.
+I love you!	Men seni sevem.
+He loves you.	Seni seve.
+I love him.	Onı sevem.
+I love it.	Men bunı sevem.
+I love it very much.	Pek bunı sevem.
+I like very much.	Pek sevem.
