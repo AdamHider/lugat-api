@@ -16,7 +16,7 @@ class Visio{
             $filter = array_filter($predictionList, function ($item) use ($position) {
                 return $item['position'] == $position;
               });
-            usort($filter, fn($a, $b) => $a['rank1'] < $b['rank1']);  
+            usort($filter, fn($a, $b) => $a['rank1'] < $b['rank1'] && $a['freq_rank'] > $b['freq_rank']);  
             $preResult[] = $filter[0];
             $position++;
         }

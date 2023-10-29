@@ -102,18 +102,101 @@ class Neuron{
         
         $sql = "
             SELECT 
-                p1.axon_id, d1.token AS core, AVG(p1.position) AS position, ABS(p.position - ".$neuron['position'].") as `rank`,
-                IF(ABS(p.position - ".$neuron['position'].") = 0, p1.frequency*20, p1.frequency) as `rank1`
+                p1.axon_id, d1.token AS core, AVG(p1.position) AS position, 
+                ABS(p1.frequency - (SELECT MAX(p2.frequency) FROM crbrm_neurons_position p2 WHERE p2.token_id = p1.token_id)) as freq_rank,
+                ABS(p.position - ".$neuron['position'].") as `rank`,
+                IF(ABS(p.position - ".$neuron['position'].") = 0, p1.frequency * 10, p1.frequency) as `rank1`
             FROM crbrm_neurons_dict d
             JOIN crbrm_neurons_position p ON d.id = p.token_id  
             JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
             JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
             WHERE d.token =  ".$db->escape(addslashes($neuron['token']))." AND d.language_id = ".$neuron['language_id']."
             GROUP BY p1.id    
-            ORDER BY `rank1` DESC , `rank`
+            ORDER BY `rank1` DESC, freq_rank,  `rank`
         ";
         return $db->query($sql)->getResultArray();
     }
+
+
+
+    public function findToken($neuron, $target_language)
+    {
+        $db = \Config\Database::connect();
+        $sql = "
+            SELECT d1.token, SUM(p1.frequency) as frequency, p1.position, d.token as source
+            FROM crbrm_neurons_dict d
+            JOIN crbrm_neurons_position p ON d.id = p.token_id  
+            JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
+            JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
+            WHERE d.token =  ".$db->escape(addslashes($neuron['token']))." AND d.language_id = ".$neuron['language_id']."  AND d1.token NOT IN ('<start>', '</end>')
+            GROUP BY p1.token_id
+            ORDER BY frequency DESC
+            LIMIT 1
+        ";
+        return $db->query($sql)->getRowArray();
+    }
+
+
+
+    public function findEndPosition($tokenSet, $tokensFound, $source_language, $target_language)
+    {
+        $db = \Config\Database::connect();
+        $sql = "
+            SELECT p1.position
+            FROM crbrm_neurons_dict d
+            JOIN crbrm_neurons_position p ON d.id = p.token_id  
+            JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
+            JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
+            WHERE d.token IN ('".implode("','",array_map(fn($item) => $item['token'],$tokenSet))."')  
+            AND d1.token IN ('<\/end>', '".implode("','",array_map(fn($item) => $item['token'], $tokensFound))."')  
+            AND d.language_id = $source_language 
+            GROUP BY p1.position
+            ORDER BY p1.frequency DESC
+            LIMIT 1
+        ";
+        return $db->query($sql)->getRowArray();
+    }
+
+    public function chooseBest($tokenSet, $tokensFound, $source_language, $target_language)
+    {
+        $db = \Config\Database::connect();
+         $sql = "
+            SELECT d1.token, sum(p1.frequency) sum_freq, d.token as source
+            FROM crbrm_neurons_dict d
+            JOIN crbrm_neurons_position p ON d.id = p.token_id  
+            JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
+            JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
+            WHERE d.token IN ('".implode("','",array_map(fn($item) => $item['token'],$tokenSet))."')  
+            AND d1.token IN ('".implode("','",array_map(fn($item) => $item['token'], $tokensFound))."')  
+            AND d.language_id = $source_language AND d1.token NOT IN ('<start>', '</end>')
+            GROUP BY p1.token_id
+            ORDER BY sum_freq DESC
+            LIMIT 1
+        ";
+        
+        return $db->query($sql)->getRowArray();
+    }
+    public function chooseBestForPosition($tokenSet, $position, $source_language, $target_language)
+    {
+        $db = \Config\Database::connect();
+         $sql = "
+            SELECT d1.token
+            FROM crbrm_neurons_dict d
+            JOIN crbrm_neurons_position p ON d.id = p.token_id  
+            JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
+            JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
+            WHERE d.token IN ('".implode("','",$tokenSet)."')  AND p1.position = $position
+            AND d.language_id = $source_language AND d1.token NOT IN ('<start>', '</end>')
+            GROUP BY p1.token_id
+            ORDER BY p1.frequency DESC
+            LIMIT 1
+        ";
+        return $db->query($sql)->getRowArray();
+    }
+    
+  
+
+
     public function getDictItemId($token, $languageId)
     {
         $db = \Config\Database::connect();

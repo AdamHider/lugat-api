@@ -1,6 +1,6 @@
+He loves you.	Seni seve.
 I like you.	Men seni begenem.
 I love you!	Men seni sevem.
-He loves you.	Seni seve.
 I love him.	Onı sevem.
 I love it.	Men bunı sevem.
 I love it very much.	Pek bunı sevem.
@@ -9,3 +9,4 @@ He saw it.	Bunı kördi.
 It is very tasty.	Bu pek lezetli.
 An apple is tasty.	Alma lezetli.
 Your sister is beautiful.	Qardaşın güzel.
+Tom loves apple.	Tom alma seve.

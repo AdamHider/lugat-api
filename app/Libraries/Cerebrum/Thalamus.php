@@ -15,6 +15,7 @@ class Thalamus{
         $Neuron = new Neuron;
         $tokenList = $CortexVisio->tokenize($data['source']['text']);
         $predictions = [];
+        $tokensFound = [];
         foreach($tokenList as $index => $token){
             if($token['token'] == '<start>' || $token['token'] == '</end>'){
                 continue;
@@ -22,10 +23,68 @@ class Thalamus{
             $neurons = [];
             $token['language_id'] = $data['source']['language_id'];
             $context = $CortexVisio->getSurroundingTokens($index, $tokenList);
-            $neurons = $Neuron->find($token, $data['target']['language_id'], $context, 1);
-            $predictions = array_merge($predictions, $neurons);
+            //$neurons = $Neuron->find($token, $data['target']['language_id'], $context, 1);
+            $object = $Neuron->findToken($token, $data['target']['language_id']);
+            $object['source'] = $token['token'];
+            $tokensFound[] = $object;
+            //$predictions = array_merge($predictions, $neurons);
         }
-        $result = ["text" => $CortexVisio->normalizeOutput($predictions)];
+        $endPosition = $Neuron->findEndPosition($tokenList, $tokensFound, $data['source']['language_id'], $data['target']['language_id']);
+
+        #create mapped result with possible gaps
+        $mappedResult = [];
+        $currentPosition = 1;
+        while($currentPosition <= $endPosition['position']){
+            $filter = array_filter($tokensFound, function ($item) use ($currentPosition) {
+                return $item['position'] == $currentPosition;
+            });
+            if(!empty($filter)){
+                if(count($filter) > 1){
+                    $filter = $Neuron->chooseBest($tokenList, $filter, $data['source']['language_id'], $data['target']['language_id']);
+                } else {
+                    $filter = array_values($filter)[0];
+                }
+                $mappedResult[$currentPosition] = $filter;
+            } else {
+                $mappedResult[$currentPosition] = null;
+            }
+            $currentPosition++;
+        }
+
+        $cleanResult = [];
+
+        foreach($mappedResult as $key => &$item){
+            if(empty($item) && !empty($mappedResult[$key-1]) && !empty($mappedResult[$key+1])){
+                $object = $Neuron->chooseBestForPosition([$mappedResult[$key-1]['source'], $mappedResult[$key+1]['source']], $key, $data['source']['language_id'], $data['target']['language_id']); 
+                if(!empty($object)){
+                    $object['source'] = $mappedResult[$key+1]['source'];
+                    $item = $object;
+                }
+            }
+            if(empty($item) && !empty($mappedResult[$key+1])){
+                $object = $Neuron->chooseBestForPosition([$mappedResult[$key+1]['source']], $key, $data['source']['language_id'], $data['target']['language_id']); 
+                if(!empty($object)){
+                    $object['source'] = $mappedResult[$key+1]['source'];
+                    $item = $object;
+                }
+            }
+            if(empty($item) && !empty($mappedResult[$key-1])){
+                $object = $Neuron->chooseBestForPosition([$mappedResult[$key-1]['source']], $key, $data['source']['language_id'], $data['target']['language_id']); 
+                if(!empty($object)){
+                    $object['source'] = $mappedResult[$key-1]['source'];
+                    $item = $object;
+                }
+            }
+            if(!empty($item)){
+                $cleanResult[] =  $item;
+            }
+        }
+        $result = [
+            "text" => implode(' ', array_map(fn($item) => $item['token'], $cleanResult))
+        ];
+       
+
+        //$result = ["text" => $CortexVisio->normalizeOutput($predictions)];
         return $result;
     }
     public function remember($data)
@@ -83,13 +142,14 @@ class Thalamus{
                 $is_new = true;
                 $axonId = $Neuron->getLastAxonId();
             } else {
-                if($is_new) $Neuron->decreaseAxonFrequency($ids, $token['axon_id']); 
+                //if($is_new) $Neuron->decreaseAxonFrequency($ids, $token['axon_id']); 
                 /*
                 $Neuron->getGroupAxonIdTest($combinationObject);
                 print_r($combinationObject);
                 die;*/
             }
-            if($is_new) $Neuron->decreaseAxonFrequency($ids, $axonId); 
+            //if($is_new) $Neuron->decreaseAxonFrequency($ids, $axonId); 
+
             foreach($combinationObject as &$token){
                 $token['axon_id'] = $axonId;
                 $Neuron->save($token);
