@@ -13,7 +13,7 @@ class Thalamus{
     {
         $CortexVisio = new Visio;
         $Neuron = new Neuron;
-        $tokenList = $CortexVisio->tokenize($data['source']['text']);
+        $tokenList = $CortexVisio->tokenize($data['source']['text'], true);
         $predictions = [];
         $tokensFound = [];
         foreach($tokenList as $index => $token){
@@ -30,6 +30,9 @@ class Thalamus{
             //$predictions = array_merge($predictions, $neurons);
         }
         $endPosition = $Neuron->findEndPosition($tokenList, $tokensFound, $data['source']['language_id'], $data['target']['language_id']);
+        
+        
+        //$endPosition['position'] = 100;
 
         #create mapped result with possible gaps
         $mappedResult = [];
@@ -48,6 +51,7 @@ class Thalamus{
             } else {
                 $mappedResult[$currentPosition] = null;
             }
+            
             $currentPosition++;
         }
 
@@ -78,6 +82,11 @@ class Thalamus{
             if(!empty($item)){
                 $cleanResult[] =  $item;
             }
+            /*
+            $tokenEndPosition = $Neuron->findTokenEndPosition($item['source'], $tokensFound, $data['source']['language_id'], $data['target']['language_id']);
+            if($key == $tokenEndPosition['position']){
+                break;
+            }*/
         }
         $result = [
             "text" => implode(' ', array_map(fn($item) => $item['token'], $cleanResult))

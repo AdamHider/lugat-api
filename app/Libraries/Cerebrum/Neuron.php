@@ -148,7 +148,26 @@ class Neuron{
             JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
             JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
             WHERE d.token IN ('".implode("','",array_map(fn($item) => $item['token'],$tokenSet))."')  
-            AND d1.token IN ('<\/end>', '".implode("','",array_map(fn($item) => $item['token'], $tokensFound))."')  
+            AND d1.token IN ('<\/end>')  
+            AND d.language_id = $source_language 
+            GROUP BY p1.position
+            ORDER BY p1.position DESC, p1.frequency DESC
+            LIMIT 1
+        ";
+        return $db->query($sql)->getRowArray();
+    }
+
+    public function findTokenEndPosition($token, $tokensFound, $source_language, $target_language)
+    {
+        $db = \Config\Database::connect();
+        $sql = "
+            SELECT p1.position
+            FROM crbrm_neurons_dict d
+            JOIN crbrm_neurons_position p ON d.id = p.token_id  
+            JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
+            JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
+            WHERE d.token =  ".$db->escape(addslashes($token))."
+            AND d1.token IN ('<\/end>')  
             AND d.language_id = $source_language 
             GROUP BY p1.position
             ORDER BY p1.frequency DESC
@@ -169,7 +188,7 @@ class Neuron{
             WHERE d.token IN ('".implode("','",array_map(fn($item) => $item['token'],$tokenSet))."')  
             AND d1.token IN ('".implode("','",array_map(fn($item) => $item['token'], $tokensFound))."')  
             AND d.language_id = $source_language AND d1.token NOT IN ('<start>', '</end>')
-            GROUP BY p1.token_id
+            GROUP BY p1.axon_id
             ORDER BY sum_freq DESC
             LIMIT 1
         ";
@@ -180,7 +199,7 @@ class Neuron{
     {
         $db = \Config\Database::connect();
          $sql = "
-            SELECT d1.token
+            SELECT d1.token, d.token as source
             FROM crbrm_neurons_dict d
             JOIN crbrm_neurons_position p ON d.id = p.token_id  
             JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 

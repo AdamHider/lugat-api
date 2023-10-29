@@ -68,7 +68,7 @@ class Visio{
         }
         return $result;
     }
-    public function tokenize($sentence)
+    public function tokenize($sentence, $ignoreStartEnd = false)
     {
         $result = [];
         $sentence = mb_strtolower($sentence);
@@ -81,7 +81,9 @@ class Visio{
         }
         $sentence = str_replace('  ',  ' ',$sentence);
         $sentence = str_replace('ё', 'е', $sentence);
-        $sentence = '<start> '.$sentence.' </end>'; 
+        if(! $ignoreStartEnd){
+            $sentence = '<start> '.$sentence.' </end>'; 
+        }
         $tokenList = explode(' ', trim($sentence));
         return $this->assetPossitions($tokenList);
     }
