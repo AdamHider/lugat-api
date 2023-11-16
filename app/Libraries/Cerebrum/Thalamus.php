@@ -38,6 +38,26 @@ class Thalamus{
         //$result = ["text" => $CortexVisio->normalizeOutput($predictions)];
         return $result;
     }
+    public function markupSentences($token, $sentences, $source_language, $target_language)
+    {
+        $CortexVisio = new Visio;
+        $Neuron = new Neuron;
+        $result = [];
+
+        foreach($sentences as &$sentence) {
+            $tokenizedSource = $CortexVisio->tokenize($sentence['source_sentence']);
+            $tokenizedTarget = $CortexVisio->tokenize($sentence['target_sentence']);
+            $tokenObject =  array_column($tokenizedSource, null, 'token')[$token];
+            $most_probable = $Neuron->getMostProbable($tokenObject, $tokenizedTarget, $source_language, $target_language);
+            print_r($most_probable);
+            die;
+            $sentence['source_result'] = preg_replace("/$token/i", '<b>$0</b>', $sentence['source_sentence']);
+            $sentence['target_result'] = preg_replace("/".$most_probable['token']."/i", '<b>$0</b>', $sentence['target_sentence']);
+        }
+        return ['sentences' => $sentences];
+    }
+
+    
     public function remember($data)
     {
         $Neuron = new Neuron;

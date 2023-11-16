@@ -37,10 +37,13 @@ class Translator extends BaseController
     public function predict()
     {
         $Thalamus = new Thalamus;
+        $SentenceModel = model('SentenceModel');
 
         $data = $this->request->getJSON(true);
         
-        $result = $Thalamus->predict($data);
+        $sentences = $SentenceModel->searchList($data);
+
+        $result = $Thalamus->markupSentences($data['token'], $sentences, $data['source_language_id'], $data['target_language_id']);
         if(!$result){
             return $this->failNotFound('not_found');
         }

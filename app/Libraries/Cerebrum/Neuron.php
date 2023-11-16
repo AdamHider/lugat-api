@@ -116,6 +116,33 @@ class Neuron{
         ";
         return $db->query($sql)->getResultArray();
     }
+    public function getMostProbable($source_token, $target_tokens, $source_language, $target_language)
+    {
+        $db = \Config\Database::connect();
+        //if(isset($context['previousTokens'])) $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".implode("','", $context['previousTokens'])."') AND t2.position < ".$neuron['position'].")";
+        //if(isset($context['nextTokens']))     $contextQuery .= ", (SELECT COUNT(*) FROM crbrm_neurons t2 WHERE t1.axon_id = t2.axon_id and t1.core != t2.core AND t2.language_id = ".$neuron['language_id']." and t2.core IN ('".implode("','", $context['nextTokens'])."') AND t2.position > ".$neuron['position'].")";
+        $targetQuery = [];
+        foreach($target_tokens as $target) {
+            $targetQuery[] = "(d1.token = ".$db->escape(addslashes($target['token']))." AND p1.position = ".$target['position'].")";
+        }
+        $targetQuery = [];
+        foreach($target_tokens as $target) {
+            $targetQuery[] = $db->escape(addslashes($target['token']));
+        }
+         $sql = "
+            SELECT 
+                d1.token,
+                p1.position
+            FROM crbrm_neurons_dict d
+            JOIN crbrm_neurons_position p ON d.id = p.token_id  
+            JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
+            JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
+            WHERE d.token =  ".$db->escape(addslashes($source_token['token']))." AND d.language_id = ".$source_language." AND d1.token IN (".implode(',', $targetQuery).")
+            ORDER BY p.frequency DESC  
+            LIMIT 1  
+        ";
+        return $db->query($sql)->getRowArray();
+    }
 
 
 
@@ -189,20 +216,6 @@ class Neuron{
         $db->query("TRUNCATE crbrm_neurons_dict");
         $db->query("TRUNCATE crbrm_neurons_position");
     }
-
-    public function getSentences($token, $languageId)
-    {
-        $db = \Config\Database::connect();
-        $sql = "
-            SELECT id FROM crbrm_neurons_dict WHERE token = ".$db->escape($token)." AND language_id = $languageId
-        ";
-        $result = $db->query($sql)->getRow();
-        if(!empty($result->id)){
-            return $result->id;
-        }
-        return null;
-    }
-
 
 
 }

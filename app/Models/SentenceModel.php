@@ -8,7 +8,7 @@ use App\Libraries\Cerebrum\Hippocampus;
 
 class SentenceModel extends Model
 {
-    protected $table      = 'lgta_sentences';
+    protected $table      = 'lgt_sentences';
     protected $primaryKey = 'id';
 
     protected $useAutoIncrement = true;
@@ -52,6 +52,16 @@ class SentenceModel extends Model
         
 
         return $sentencePair;
+    }
+    public function searchList ($data) 
+    {
+        
+        $sentences = $this->join('lgt_sentences s2', 'lgt_sentences.group_id = s2.group_id AND s2.language_id = '.$data['target_language_id'])
+        ->select('lgt_sentences.sentence as source_sentence, s2.sentence as target_sentence, MATCH (lgt_sentences.sentence) AGAINST ('.$this->escape($data['token']).' IN BOOLEAN MODE) AS score')
+        ->where('MATCH (lgt_sentences.sentence) AGAINST ('.$this->escape($data['token']).' IN BOOLEAN MODE) AND lgt_sentences.language_id = '.$data['source_language_id'])
+        ->orderBy('score DESC')
+        ->limit(10)->get()->getResultArray();
+        return $sentences;
     }
     public function createItem ($data)
     {
