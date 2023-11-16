@@ -29,7 +29,7 @@ class Database extends Config
         'hostname' => '127.0.0.1:3307',
         'username' => 'root',
         'password' => '',
-        'database' => 'lugat_db',
+        'database' => 'lugatciq_db',
         'DBDriver' => 'MySQLi',
         'DBPrefix' => '',
         'pConnect' => false,

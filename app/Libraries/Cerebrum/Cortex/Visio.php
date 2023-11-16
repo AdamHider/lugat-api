@@ -23,9 +23,6 @@ class Visio{
         $predictionNormalized = $this->groupBy($preResult, 'core');
         foreach($predictionNormalized as $token){
             $result[] = $token['core'];
-            if($token['core'] == '</end>') {
-                //break;
-             }
         }
         return implode(' ', $result);
     }
@@ -81,9 +78,6 @@ class Visio{
         }
         $sentence = str_replace('  ',  ' ',$sentence);
         $sentence = str_replace('ё', 'е', $sentence);
-        if(! $ignoreStartEnd){
-            $sentence = '<start> '.$sentence.' </end>'; 
-        }
         $tokenList = explode(' ', trim($sentence));
         return $this->assetPossitions($tokenList);
     }
