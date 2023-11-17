@@ -138,7 +138,7 @@ class Neuron{
             JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
             JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
             WHERE d.token =  ".$db->escape(addslashes($source_token['token']))." AND d.language_id = ".$source_language." AND d1.token IN (".implode(',', $targetQuery).")
-            AND p.frequency > 1
+            AND p.frequency >= 1
             ORDER BY p1.frequency DESC  
             LIMIT 1  
         ";
