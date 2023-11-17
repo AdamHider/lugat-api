@@ -138,7 +138,8 @@ class Neuron{
             JOIN crbrm_neurons_position p1 ON p.axon_id = p1.axon_id 
             JOIN crbrm_neurons_dict d1 ON d1.id = p1.token_id AND d1.language_id = $target_language
             WHERE d.token =  ".$db->escape(addslashes($source_token['token']))." AND d.language_id = ".$source_language." AND d1.token IN (".implode(',', $targetQuery).")
-            ORDER BY p.frequency DESC  
+            AND p.frequency > 1
+            ORDER BY p1.frequency DESC  
             LIMIT 1  
         ";
         return $db->query($sql)->getRowArray();
@@ -215,7 +216,40 @@ class Neuron{
         $db = \Config\Database::connect();
         $db->query("TRUNCATE crbrm_neurons_dict");
         $db->query("TRUNCATE crbrm_neurons_position");
+        $db->query("TRUNCATE lgt_sentences");
     }
 
+    public function createSentencePair($source, $target, $source_language, $target_language)
+    {
+        $db = \Config\Database::connect();
+        $group_id = $this->getLastSentenceGroupId();
+        $sql = "
+            INSERT INTO
+            lgt_sentences
+            SET
+                id          = NULL, 
+                sentence       = ".$db->escape($source).", 
+                language_id = ".(int) $source_language.",
+                group_id = ".(int) $group_id."
+        ";
+        $db->query($sql);
+        $sql = "
+            INSERT INTO
+            lgt_sentences
+            SET
+                id          = NULL, 
+                sentence       = ".$db->escape($target).", 
+                language_id = ".(int) $target_language.",
+                group_id = ".(int) $group_id."
+        ";
+        $db->query($sql);
+        return $db->insertID();
+    }
+    public function getLastSentenceGroupId()
+    {
+        $db = \Config\Database::connect();
+        $sql = " SELECT MAX(group_id)+1 as lastId FROM lgt_sentences";
+        return $db->query($sql)->getRow()->lastId;
+    }
 
 }

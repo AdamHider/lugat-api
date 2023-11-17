@@ -60,7 +60,7 @@ class SentenceModel extends Model
         ->select('lgt_sentences.sentence as source_sentence, s2.sentence as target_sentence, MATCH (lgt_sentences.sentence) AGAINST ('.$this->escape($data['token']).' IN BOOLEAN MODE) AS score')
         ->where('MATCH (lgt_sentences.sentence) AGAINST ('.$this->escape($data['token']).' IN BOOLEAN MODE) AND lgt_sentences.language_id = '.$data['source_language_id'])
         ->orderBy('score DESC')
-        ->limit(10)->get()->getResultArray();
+        ->limit(100)->get()->getResultArray();
         return $sentences;
     }
     public function createItem ($data)

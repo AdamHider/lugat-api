@@ -47,12 +47,15 @@ class Thalamus{
         foreach($sentences as &$sentence) {
             $tokenizedSource = $CortexVisio->tokenize($sentence['source_sentence']);
             $tokenizedTarget = $CortexVisio->tokenize($sentence['target_sentence']);
+            if(empty(array_column($tokenizedSource, null, 'token')[$token])) continue;
             $tokenObject =  array_column($tokenizedSource, null, 'token')[$token];
             $most_probable = $Neuron->getMostProbable($tokenObject, $tokenizedTarget, $source_language, $target_language);
-            print_r($most_probable);
-            die;
             $sentence['source_result'] = preg_replace("/$token/i", '<b>$0</b>', $sentence['source_sentence']);
-            $sentence['target_result'] = preg_replace("/".$most_probable['token']."/i", '<b>$0</b>', $sentence['target_sentence']);
+            $sentence['target_result'] = '';
+            if(!empty($most_probable)){
+                $sentence['target_result'] = preg_replace("/".$most_probable['token']."/i", '<b>$0</b>', $sentence['target_sentence']);
+            }
+            
         }
         return ['sentences' => $sentences];
     }
@@ -188,6 +191,7 @@ class Thalamus{
             ];
             //Get First Line of Data over here
             $this->train($data);
+            $Neuron->createSentencePair($data_txt[0], $data_txt[1], 4, 5);
         }                              
 
         fclose($fp);
