@@ -31,6 +31,9 @@ $routes->set404Override();
 // route since we don't have to scan directories.
 $routes->post('/Translator/(:any)', 'Translator::$1');
 $routes->post('/Sentence/(:any)', 'Sentence::$1');
+$routes->post('/Token/(:any)', 'Token::$1');
+$routes->post('/TokenRelation/(:any)', 'TokenRelation::$1');
+$routes->post('/Word/(:any)', 'Word::$1');
 
 /*
  * --------------------------------------------------------------------

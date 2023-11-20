@@ -8,19 +8,8 @@ class Visio{
     public function normalizeOutput($predictionList)
     {
         $result = [];
-        $preResult = [];
-        $maxPosition = max(array_map(fn($o) => $o['position'], $predictionList));
-        $position = 0;
-        
-        while($position <= $maxPosition){
-            $filter = array_filter($predictionList, function ($item) use ($position) {
-                return $item['position'] == $position;
-              });
-            usort($filter, fn($a, $b) => $a['rank1'] < $b['rank1'] && $a['freq_rank'] > $b['freq_rank']);  
-            $preResult[] = $filter[0];
-            $position++;
-        }
-        $predictionNormalized = $this->groupBy($preResult, 'core');
+        usort($predictionList, function($a, $b){ return $a['position'] <=> $b['position']; });
+        $predictionNormalized = $this->groupBy($predictionList, 'core');
         foreach($predictionNormalized as $token){
             $result[] = $token['core'];
         }
@@ -61,13 +50,12 @@ class Visio{
         $result = [];
         
         foreach($neuronList['neurons'] as $neuron){
-            $result[] = $neuron['core'];
+            $result[] = $neuron['token'];
         }
         return $result;
     }
-    public function tokenize($sentence, $ignoreStartEnd = false)
+    public function tokenize($sentence)
     {
-        $result = [];
         $sentence = mb_strtolower($sentence);
         $sentence = str_replace(array("\n", "\r"), '', $sentence);
         foreach($this->skip as $item){
@@ -78,19 +66,7 @@ class Visio{
         }
         $sentence = str_replace('  ',  ' ',$sentence);
         $sentence = str_replace('ё', 'е', $sentence);
-        $tokenList = explode(' ', trim($sentence));
-        return $this->assetPossitions($tokenList);
-    }
-    public function assetPossitions($tokenList)
-    {
-        $result = [];
-        foreach($tokenList as $index => $token){
-            $result[] = [
-                'token' => $token,
-                'position' => $index// $this->calculatePosition(count($tokenList), $index)
-            ];
-        }
-        return $result;
+        return explode(' ', trim($sentence));
     }
     public function getSurroundingTokens($index, $tokenList)
     {
@@ -103,42 +79,4 @@ class Visio{
         return $result;
     }
     
-    public function getSentenceTokenCombinations($tokenList)
-    {
-        $results = array(array( ));
-
-        foreach ($tokenList as $index => $values)
-            foreach ($results as $combination)
-                    array_push($results, array_merge($combination, array($values))); 
-        array_shift($results);
-        return $results;
-    }
-    public function multisortCombinations($arrays, $i = 0)
-    {
-        if ( !isset($arrays[$i]) ) return array();
-        if ( $i == count($arrays) - 1) return $arrays[$i];
-        $tmp = $this->multisortCombinations($arrays, $i + 1);
-        $result = array();
-        foreach ($arrays[$i] as $v) 
-            foreach ($tmp as $t) 
-                $result[] = is_array($t) ? 
-                    array_merge($v, $t) :
-                    array($v, $t);
-            
-        
-        return $result;
-    }
-    public function multisortCombinations1($tokenList, $tokenList1)
-    {
-        $result = [];
-        foreach($tokenList as $sourceToken){
-            foreach($tokenList1 as $targetToken){
-                $result[] = [$sourceToken, $targetToken];
-            }
-        }
-        return $result;
-    }
-
 }
-
-

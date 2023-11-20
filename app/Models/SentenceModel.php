@@ -42,13 +42,10 @@ class SentenceModel extends Model
             $this->join('achievements_usermap', 'achievements_usermap.item_id = achievements.id')
             ->where('achievements_usermap.user_id', $data['user_id']);
         }*/
-        $sentencePair = $this->join('lgta_sentences s2', 'lgta_sentences.chapter_id = s2.chapter_id AND s2.`index` = lgta_sentences.`index`')
-        ->select('lgta_sentences.id as source_id, lgta_sentences.text as source_text, s2.id as target_id, s2.text as target_text')
-        ->where([
-            'lgta_sentences.is_trained'  => 0, 
-            'lgta_sentences.language_id' => $data['source_language_id'],
-            's2.language_id' => $data['target_language_id']
-        ])->limit(1)->get()->getRowArray();
+        $sentencePair = $this->join('lgt_sentences s2', 's2.group_id = lgt_sentences.group_id')
+        ->select('lgt_sentences.id as source_id, lgt_sentences.sentence as source_text, s2.id as target_id, s2.sentence as target_text')
+        ->where(' lgt_sentences.is_trained IS NULL AND lgt_sentences.language_id = '.$data['source_language_id'].' AND s2.language_id = '.$data['target_language_id'])
+        ->limit(1)->get()->getRowArray();
         
 
         return $sentencePair;
@@ -89,5 +86,47 @@ class SentenceModel extends Model
 
         return $data['id'];        
     }
-    
+    public function forgetAll()
+    {
+        $db = \Config\Database::connect();
+        $db->query("TRUNCATE lgt_words");
+        $db->query("TRUNCATE lgt_token_relations");
+        $db->query("TRUNCATE lgt_sentences");
+        $db->query("TRUNCATE lgt_tokens");
+        return;
+    }
+    public function createSentence($sentence, $language, $group_id)
+    {
+        $db = \Config\Database::connect();
+        $sql = "
+            INSERT INTO
+            lgt_sentences
+            SET
+                id          = NULL, 
+                sentence       = ".$db->escape($sentence).", 
+                language_id = ".(int) $language.",
+                group_id = ".(int) $group_id."
+        ";
+        $db->query($sql);
+        return $db->insertID();
+    }
+
+    public function getLastSentenceGroupId()
+    {
+        $db = \Config\Database::connect();
+        $sql = " SELECT MAX(group_id)+1 as lastId FROM lgt_sentences";
+        return $db->query($sql)->getRow()->lastId;
+    }
+    public function getSentenceTokens($sentence_id)
+    {
+        $db = \Config\Database::connect();
+        $sql = "
+            SELECT * 
+            FROM lgt_words d
+            JOIN lgt_tokens p ON d.id = p.token_id  
+            WHERE p.sentence_id = $sentence_id
+            ORDER BY `index` ASC
+        ";
+        return $db->query($sql)->getResultArray();
+    }
 }
