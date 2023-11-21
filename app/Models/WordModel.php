@@ -7,8 +7,8 @@ use CodeIgniter\Database\BaseBuilder;
 
 class WordModel extends Model
 {
-    protected $table      = 'lgt_wordform_list';
-    protected $primaryKey = 'wordform_id';
+    protected $table      = 'lgt_words';
+    protected $primaryKey = 'id';
 
     protected $useAutoIncrement = true;
 
@@ -16,11 +16,8 @@ class WordModel extends Model
     protected $useSoftDeletes = true;
 
     protected $allowedFields = [
-        'wordform_id', 
-        'wordform', 
-        'is_disabled', 
-        'word_id', 
-        'set_configuration_id'
+        'word', 
+        'language_id'
     ];
     
     protected $useTimestamps = false;
@@ -28,31 +25,24 @@ class WordModel extends Model
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
 
-    public function getItemId($token, $languageId)
+    public function getItem($word, $languageId)
     {
-        $db = \Config\Database::connect();
-        $sql = "
-            SELECT id FROM lgt_words WHERE token = ".$db->escape($token)." AND language_id = $languageId
-        ";
-        $result = $db->query($sql)->getRow();
-        if(!empty($result->id)){
-            return $result->id;
+        $word = $this->where("word = ".$this->escape($word)." AND language_id = ".$languageId)->get()->getRowArray();
+
+        if(empty($word)){
+            return false;
         }
-        return null;
+        return $word;
     }
     
-    public function createItem($token, $languageId)
+    public function createItem ($data)
     {
-        $db = \Config\Database::connect();
-        $sql = "
-            INSERT INTO
-            lgt_words
-            SET
-                id          = NULL, 
-                token       = ".$db->escape($token).", 
-                language_id = ".(int) $languageId."
-        ";
-        $db->query($sql);
-        return $db->insertID();
+        $this->validationRules = [];
+        $this->transBegin();
+        $word_id = $this->insert($data, true);
+
+        $this->transCommit();
+
+        return $word_id;        
     }
 }

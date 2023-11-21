@@ -1,6 +1,5 @@
 <?php
 
-$skip = ['«', '»', '!', '?', '.', ',', ';', ':', '…', '“', '—'];
 
 function normalizeOutput($predictionList)
 {
@@ -54,7 +53,7 @@ function exctractTokens($neuronList)
 }
 function tokenize($sentence)
 {
-    global $skip;
+    $skip = ['«', '»', '!', '?', '.', ',', ';', ':', '…', '“', '—'];
     $sentence = mb_strtolower($sentence);
     $sentence = str_replace(array("\n", "\r"), '', $sentence);
     foreach($skip as $item){

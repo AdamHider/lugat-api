@@ -29,40 +29,52 @@ class TokenModel extends Model
 
     public function getList ($data) 
     {
-        $result = [
-            "source" => [],
-            "target" => []
-        ];
-        $tokens = $this->join('lgt_words w', 'lgt_tokens.word_id = w.id')
-        ->select("lgt_tokens.*, w.word")
-        ->where("lgt_tokens.sentence_id IN (".$data['source']['id'].", ".$data['target']['id'].")")
-        ->orderBy('sentence_id, `index` ASC')->get()->getResultArray();
+        $this->join('lgt_words w', 'lgt_tokens.word_id = w.id')
+        ->select("lgt_tokens.*, lgt_tokens.id as token_id, w.word, w.language_id");
+        
+        if(isset($data['source']) && isset($data['target'])){
+            $this->where("lgt_tokens.sentence_id IN (".$data['source']['id'].", ".$data['target']['id'].")");
+        }
+
+        if(isset($data['ids'])){
+            $this->where("lgt_tokens.id IN (".$data['ids'].")");
+        }
+
+        $tokens = $this->orderBy('sentence_id, `index` ASC')->get()->getResultArray();
         
         if(empty($tokens)){
             return false;
         }
-        foreach($tokens as $token){
-            if($token['sentence_id'] == $data['source']['id']) {
-                $result["source"][] = $token;
-            } else {
-                $result["target"][] = $token;
-            }
-        }
-        return $result;
+        return $tokens;
     }
-    public function createItem($token_id, $sentence_id, $index)
+    public function predictList ($data) 
     {
-        $db = \Config\Database::connect();
-        $sql = "
-            INSERT IGNORE INTO
-                lgt_words
-            SET
-                token_id    = ".(int) $token_id.",
-                sentence_id = ".(int) $sentence_id.",
-                `index`       = ".(int) $index."
-        ";
-        $db->query($sql);
-        return $db->insertID();
+        $groups = $this->join('lgt_tokens t1 ', 'lgt_tokens.word_id = t1.word_id')
+        ->join('lgt_token_relations tr', 'tr.token_id = t1.id')
+        ->join('lgt_sentences s', 's.id = t1.sentence_id')
+        ->select("DISTINCT GROUP_CONCAT(lgt_tokens.id) as wset, COUNT(DISTINCT s.language_id) as ct")
+        ->where("lgt_tokens.sentence_id IN (".$data['source']['id'].", ".$data['target']['id'].")")
+        ->groupBy('tr.group_id')
+        ->having('ct = 2')
+        ->get()->getResultArray();
+        
+        if(empty($groups)){
+            return false;
+        }
+        return $groups;
+    }
+
+    
+    
+    public function createItem ($data)
+    {
+        $this->validationRules = [];
+        $this->transBegin();
+        $word_id = $this->insert($data, true);
+
+        $this->transCommit();
+
+        return $word_id;        
     }
 
 

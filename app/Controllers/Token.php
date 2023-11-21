@@ -20,5 +20,23 @@ class Token extends BaseController
         }
         return $this->respond($result, 200);
     }
+    public function predictList()
+    {
+        $TokenModel = model('TokenModel');
+        $result = false;
+        $data = $this->request->getJSON(true);
+        
+        $groups = $TokenModel->predictList($data);
+        $result = [];
+        if($groups){
+            foreach($groups as $group){
+                $result[] = $TokenModel->getList(['ids' => $group['wset']]);
+            }
+        }
+        if(!$result){
+            return $this->failNotFound('not_found');
+        }
+        return $this->respond($result, 200);
+    }
 
 }

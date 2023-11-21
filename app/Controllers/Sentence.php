@@ -77,23 +77,32 @@ class Sentence extends BaseController
     }
     private function prepareDict($sentencePair)
     {
+        helper('Token');
         $WordModel = model('WordModel');
         $TokenModel = model('TokenModel');
         $sourceTokenList = tokenize($sentencePair['source']['text']);
         $targetTokenList = tokenize($sentencePair['target']['text']);
         foreach($sourceTokenList as $sourceIndex => &$sourceToken){
-            $tokenId = $WordModel->getItemId($sourceToken, $sentencePair['source']['language_id']); 
-            if(empty($tokenId)){
-                $tokenId = $WordModel->createItem($sourceToken, $sentencePair['source']['language_id']); 
+            $word = $WordModel->getItem($sourceToken, $sentencePair['source']['language_id']); 
+            if(empty($word['id'])){
+                $word = [];
+                $word['id'] = $WordModel->createItem(['word' => $sourceToken, 'language_id' => $sentencePair['source']['language_id']]); 
             }
-            $TokenModel->createItem($tokenId, $sentencePair['source']['sentence_id'], $sourceIndex);
+            $TokenModel->createItem([
+                'word_id' => $word['id'], 
+                'sentence_id' =>  $sentencePair['source']['sentence_id'], 
+                'index' => $sourceIndex]);
         }
         foreach($targetTokenList as $targetIndex => &$targetToken){ 
-            $tokenId = $WordModel->getItemId($targetToken, $sentencePair['target']['language_id']); 
-            if(empty($tokenId)){
-                $tokenId = $WordModel->createItem($targetToken, $sentencePair['target']['language_id']); 
+            $word = $WordModel->getItem($targetToken, $sentencePair['target']['language_id']); 
+            if(empty($word['id'])){
+                $word = [];
+                $word['id'] = $WordModel->createItem(['word' => $targetToken, 'language_id' => $sentencePair['target']['language_id']]); 
             } 
-            $TokenModel->createItem($tokenId, $sentencePair['target']['sentence_id'], $targetIndex);
+            $TokenModel->createItem([
+                'word_id' => $word['id'], 
+                'sentence_id' =>  $sentencePair['target']['sentence_id'], 
+                'index' => $targetIndex]);
         }
         return [$sourceTokenList, $targetTokenList];
     }
