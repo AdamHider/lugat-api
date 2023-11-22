@@ -49,13 +49,13 @@ class TokenModel extends Model
     }
     public function predictList ($data) 
     {
-        $groups = $this->join('lgt_tokens t1 ', 'lgt_tokens.word_id = t1.word_id')
-        ->join('lgt_token_relations tr', 'tr.token_id = t1.id')
-        ->join('lgt_sentences s', 's.id = t1.sentence_id')
-        ->select("DISTINCT GROUP_CONCAT(lgt_tokens.id) as wset, COUNT(DISTINCT s.language_id) as ct")
-        ->where("lgt_tokens.sentence_id IN (".$data['source']['id'].", ".$data['target']['id'].")")
+        $groups = $this
+        ->join('lgt_token_relations tr', 'tr.token_id = lgt_tokens.id')
+        ->join('lgt_tokens t1 ', 'lgt_tokens.word_id = t1.word_id AND t1.sentence_id IN ('.$data['source']['id'].", ".$data['target']['id'].')', 'left')
+        ->join('lgt_sentences s', 's.id = t1.sentence_id', 'left')
+        ->select("DISTINCT GROUP_CONCAT(t1.id) as wset, COUNT(DISTINCT s.language_id) as ct, COUNT(DISTINCT lgt_tokens.id) as tcount, COUNT(DISTINCT t1.id) as t1count ")
         ->groupBy('tr.group_id')
-        ->having('ct = 2')
+        ->having('ct = 2  AND tcount = t1count')
         ->get()->getResultArray();
         
         if(empty($groups)){
