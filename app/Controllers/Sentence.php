@@ -26,6 +26,20 @@ class Sentence extends BaseController
 
         return $this->respond($result);
     }
+    public function getPairList()
+    {
+        $SentenceModel = model('SentenceModel');
+
+        $data = $this->request->getJSON(true);
+        
+        $result = $SentenceModel->getPairList($data);
+
+        if ($result == 'not_found') {
+            return $this->failNotFound('not_found');
+        }
+
+        return $this->respond($result);
+    }
 
     public function setTrained()
     {
@@ -105,47 +119,6 @@ class Sentence extends BaseController
                 'index' => $targetIndex]);
         }
         return [$sourceTokenList, $targetTokenList];
-    }
-    public function analyze()
-    {
-        $SentenceModel = model('SentenceModel');
-
-        $data = $this->request->getJSON(true);
-        $result = [
-            'sentences' => [
-                'source' => $data['source']['id'],
-                'target' => $data['target']['id']
-            ],
-            'tokens' => [],
-            'matches' => [],
-            'languages' => [
-                'source' => $data['source']['language_id'],
-                'target' => $data['target']['language_id']
-            ]
-        ];
-        $result['tokens'][$data['source']['language_id']] = $SentenceModel->getSentenceTokens($data['source']['id']);
-        $result['tokens'][$data['target']['language_id']] = $SentenceModel->getSentenceTokens($data['target']['id']);
-        $result['matches'] = $this->getMatches($result);
-        return $result;
-    }
-    public function getMatches($data)
-    {
-        $TokenRelationModel = model('TokenRelationModel');
-        $result = [];
-        $axonList = $TokenRelationModel->getList($data['sentences']['source'], $data['sentences']['target']);
-        foreach($axonList as $axon){
-            $neuronGroup = [];
-            $group = $TokenRelationModel->getListByGroup($axon['axon_id']); 
-            if(!empty($group)){
-                foreach($group as $neuron){
-                    $neuron['index'] = array_search($neuron['token_id'], $data['tokens'][$neuron['language_id']]);
-                    $neuronGroup[$neuron['language_id']]['isFixedPosition'] = false;
-                    $neuronGroup[$neuron['language_id']]['neurons'][] = $neuron;
-                }
-            }
-            $result[] = $neuronGroup;
-        }
-        return $result;
     }
 
 }
