@@ -7,7 +7,7 @@ use CodeIgniter\Database\BaseBuilder;
 
 class ChapterModel extends Model
 {
-    protected $table      = 'lgta_book_chapters';
+    protected $table      = 'lgt_book_chapters';
     protected $primaryKey = 'id';
 
     protected $useAutoIncrement = true;
@@ -27,13 +27,20 @@ class ChapterModel extends Model
     public function getList ($data) 
     {
 
-        $this->join('lgta_texts', 'lgta_book_chapters.id = lgta_texts.chapter_id', 'left')
-        ->select('lgta_book_chapters.*, COUNT(lgta_texts.id) as total_texts')->where('lgta_book_chapters.book_id', $data['book_id']);
+        $TextModel = model('TextModel');
+        $this->join('lgt_texts', 'lgt_book_chapters.id = lgt_texts.chapter_id', 'left')
+        ->join('lgt_languages', 'lgt_texts.language_id = lgt_languages.id', 'left')
+        ->select('lgt_book_chapters.*, COUNT(lgt_texts.id) as total_texts, GROUP_CONCAT(lgt_languages.code) as languages')
+        ->where('lgt_book_chapters.book_id', $data['book_id']);
         
-        $chapters = $this->groupBy('lgta_book_chapters.id')->get()->getResultArray();
+        $chapters = $this->groupBy('lgt_book_chapters.id')->get()->getResultArray();
         
         if(empty($chapters)){
             return false;
+        }
+        foreach($chapters as &$chapter){
+            $chapter['languages'] = explode(',', $chapter['languages']);
+            $chapter['texts'] = $TextModel->getList(["chapter_id" => $chapter['id']]);
         }
         return $chapters;
     }

@@ -7,7 +7,7 @@ use CodeIgniter\Database\BaseBuilder;
 
 class TextModel extends Model
 {
-    protected $table      = 'lgta_texts';
+    protected $table      = 'lgt_texts';
     protected $primaryKey = 'id';
 
     protected $useAutoIncrement = true;
@@ -18,6 +18,7 @@ class TextModel extends Model
     protected $allowedFields = [
         'chapter_id', 
         'language_id', 
+        'source', 
         'text',
         'is_done',
         'is_exported'
@@ -28,40 +29,13 @@ class TextModel extends Model
 
     public function getList ($data) 
     {
-        $this->table('lgta_texts')->select('lgta_texts.*');
         
-        if(!empty($data['fields']->language_id)){
-            $this->where('lgta_texts.language_id', $data['fields']->language_id);
-        }
-        if(!empty($data['fields']->text)){
-            $this->like('text', $data['fields']->text, 'after');
-        }
-        if(!empty($data['fields']->word)){
-            $this->whereIn('word_id', static function (BaseBuilder $builder) use ($data) {
-                return $builder->select('word_id')->from('lgt_word_list')->like('word', $data['fields']->word, 'after');
-            });
-        }
-        if(!empty($data['fields']->template)){
-            $this->whereIn('set_configuration_id', static function (BaseBuilder $builder) use ($data) {
-                return $builder->select('set_configuration_id')->from('lgt_text_sets')->like('template', $data['fields']->template, 'both');
-            });
-        }
+        $texts = $this->join('lgt_languages', 'lgt_texts.language_id = lgt_languages.id', 'left')->
+        select('lgt_texts.*, lgt_languages.code as language_code')->where(['chapter_id' => $data['chapter_id']])->get()->getResultArray();
 
-        if(!empty($data['limit']) && !empty($data['offset'])){
-            $this->limit($data['limit'], $data['offset']);
-        }
-
-        $texts = $this->orderBy('text')->get()->getResultArray();
-        
         if(empty($texts)){
             return false;
         }
-        /*
-        foreach($achievements as &$achievement){
-            $achievement = array_merge($achievement, $DescriptionModel->getItem('achievement', $achievement['id']));
-            $achievement['image'] = base_url('image/' . $achievement['image']);
-            $achievement['progress'] = $this->calculateProgress($achievement);
-        }*/
         return $texts;
     }
     public function getItem ($data) 
