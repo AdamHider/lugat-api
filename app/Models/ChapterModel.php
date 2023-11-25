@@ -13,12 +13,11 @@ class ChapterModel extends Model
     protected $useAutoIncrement = true;
 
     protected $returnType = 'array';
-    protected $useSoftDeletes = true;
     protected $allowedFields = [
         'book_id', 
         'number', 
         'title',
-        'is_exported'
+        'is_built'
     ];
     
     protected $useTimestamps = false;
@@ -39,7 +38,7 @@ class ChapterModel extends Model
             return false;
         }
         foreach($chapters as &$chapter){
-            $chapter['languages'] = explode(',', $chapter['languages']);
+            if(!empty($chapter['languages'])) $chapter['languages'] = explode(',', $chapter['languages']);
             $chapter['texts'] = $TextModel->getList(["chapter_id" => $chapter['id']]);
         }
         return $chapters;
@@ -61,7 +60,7 @@ class ChapterModel extends Model
             'book_id' => $data['book_id'], 
             'number' => $data['number'],
             'title' => null,
-            'is_exported' => 0
+            'is_built' => 0
         ];
         $this->transBegin();
         $book_id = $this->insert($data, true);
@@ -79,5 +78,9 @@ class ChapterModel extends Model
         $this->transCommit();
 
         return $data['id'];        
+    }
+    public function deleteItem ($data)
+    {
+        return $this->delete($data);
     }
 }

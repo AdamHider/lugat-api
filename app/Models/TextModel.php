@@ -13,28 +13,34 @@ class TextModel extends Model
     protected $useAutoIncrement = true;
 
     protected $returnType = 'array';
-    protected $useSoftDeletes = true;
-
     protected $allowedFields = [
         'chapter_id', 
         'language_id', 
         'source', 
         'text',
-        'is_done',
-        'is_exported'
+        'is_built'
     ];
     
     protected $useTimestamps = false;
         
-
     public function getList ($data) 
     {
         
-        $texts = $this->join('lgt_languages', 'lgt_texts.language_id = lgt_languages.id', 'left')->
-        select('lgt_texts.*, lgt_languages.code as language_code')->where(['chapter_id' => $data['chapter_id']])->get()->getResultArray();
+        $this->join('lgt_languages', 'lgt_texts.language_id = lgt_languages.id', 'left')
+        ->join('lgt_book_chapters', 'lgt_texts.chapter_id = lgt_book_chapters.id');
 
+        $this->select('lgt_texts.*, lgt_languages.code as language_code, lgt_languages.title as language');
+
+        if(isset($data['book_id'])){
+            $this->where(['lgt_book_chapters.book_id' => $data['book_id']]);
+        }
+        if(isset($data['chapter_id'])){
+            $this->where(['lgt_texts.chapter_id' => $data['chapter_id']]);
+        }
+
+        $texts = $this->get()->getResultArray();
         if(empty($texts)){
-            return false;
+            return [];
         }
         return $texts;
     }
@@ -45,7 +51,7 @@ class TextModel extends Model
         if(empty($text)){
             return false;
         }
-        $text['is_exported'] = (bool) $text['is_exported'];
+        $text['is_built'] = (bool) $text['is_built'];
         return $text;
     }
     public function createItem ($data)
@@ -54,7 +60,7 @@ class TextModel extends Model
             'chapter_id' => $data['chapter_id'], 
             'language_id' => $data['language_id'], 
             'text' => ($data['text']) ? $data['text'] : NULL, 
-            'is_done' => $data['is_done'], 
+            'is_built' => $data['is_built'], 
         ];
         $this->transBegin();
         $text_id = $this->insert($data, true);
@@ -79,6 +85,12 @@ class TextModel extends Model
 
         return $data['id'];        
     }
+    public function deleteItem ($data)
+    {
+        return $this->delete($data);
+    }
+
+    
     public function textToSentences ($data)
     {
         $result = [];

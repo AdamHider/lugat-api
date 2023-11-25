@@ -55,6 +55,21 @@ class Text extends BaseController
         }
         return $this->respond($result);
     }
+    public function deleteItem()
+    {
+        $TextModel = model('TextModel');
+        $id = $this->request->getVar('id');
+
+        $result = $TextModel->deleteItem(['id'=>$id]);
+
+        if ($result === 'forbidden') {
+            return $this->failForbidden();
+        }
+        if($TextModel->errors()){
+            return $this->failValidationErrors($TextModel->errors());
+        }
+        return $this->respond($result);
+    }
 
     public function exportItem()
     {

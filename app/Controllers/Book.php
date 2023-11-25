@@ -46,21 +46,82 @@ class Book extends BaseController
     }
     public function saveItem()
     {
-        $TextModel = model('TextModel');
+        $BookModel = model('BookModel');
         $data = $this->request->getJSON(true);
         if($data['id']){
-            $result = $TextModel->updateItem($data);
+            $result = $BookModel->updateItem($data);
         } else {
-            $result = $TextModel->createItem($data);
+            $result = $BookModel->createItem($data);
         }
         
 
         if ($result === 'forbidden') {
             return $this->failForbidden();
         }
-        if($TextModel->errors()){
-            return $this->failValidationErrors($TextModel->errors());
+        if($BookModel->errors()){
+            return $this->failValidationErrors($BookModel->errors());
         }
         return $this->respond($result);
+    }
+    public function buildItem()
+    {
+
+        $BookModel = model('BookModel');
+        $TextModel = model('TextModel');
+        $book_id = $this->request->getVar('id');
+
+        $texts = $TextModel->getList(['book_id' => $book_id]);
+        
+        if(!empty($texts)){
+            $SentenceModel = model('SentenceModel');
+            $SentenceModel->forgetAll();
+            foreach($texts as $text){
+                if($text['source']){
+                    $this->buildSource($text, $book_id);
+                }
+            }
+        }
+
+        if($BookModel->errors()){
+            return $this->failValidationErrors($BookModel->errors());
+        }
+        return $this->respond(true);
+    }
+    public function buildSource($data, $book_id)
+    {
+        set_time_limit(9000000000);
+        ini_set('memory_limit', '1500M'); 
+        $SentenceModel = model('SentenceModel');
+        
+        foreach(file($data['source']) as $lineIndex => $sentence) {
+            if(empty(trim($sentence))){
+                continue;
+            }
+            $sentenceId = $SentenceModel->createItem([
+                'book_id' => $book_id,
+                'chapter_id' => $data['chapter_id'],
+                'index' => $lineIndex,
+                'sentence' => $sentence,
+                'language_id' => $data['language_id'], 
+                'is_trained' => false
+            ]);
+            $this->prepareDict($sentence, $data['language_id'], $sentenceId);
+        }
+    }
+    private function prepareDict($sentence, $language_id, $sentenceId)
+    {
+        helper('Token');
+        $WordModel = model('WordModel');
+        $TokenModel = model('TokenModel');
+        $tokenList = tokenize($sentence);
+        foreach($tokenList as $index => &$token){
+            $word = $WordModel->getItem($token, $language_id); 
+            $wordId = $word['id'] ?? $WordModel->createItem(['word' => $token, 'language_id' => $language_id]); 
+            $TokenModel->createItem([
+                'word_id' => $wordId, 
+                'sentence_id' => $sentenceId, 
+                'index' => $index]);
+        }
+        return $tokenList;
     }
 }

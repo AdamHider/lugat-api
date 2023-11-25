@@ -97,15 +97,4 @@ class TokenRelationsModel extends Model
         }
         return $result['lastId'];
     }
-    
-    public function createEmpty($axon_id, $token_id, $position)
-    {
-        return [
-            'axon_id'   => $axon_id,
-            'token_id'  => $token_id,
-            'position'  => $position,
-            'is_compound' => null,
-            'frequency' => 0
-        ];
-    }
 }

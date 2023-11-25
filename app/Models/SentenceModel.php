@@ -14,14 +14,13 @@ class SentenceModel extends Model
     protected $useAutoIncrement = true;
 
     protected $returnType = 'array';
-    protected $useSoftDeletes = true;
 
     protected $allowedFields = [
-        'book_id', 
-        'chapter_id', 
-        'text', 
-        'index', 
         'language_id', 
+        'book_id', 
+        'chapter_id',
+        'index',
+        'sentence', 
         'is_trained'
     ];
     
@@ -42,9 +41,9 @@ class SentenceModel extends Model
             $this->join('achievements_usermap', 'achievements_usermap.item_id = achievements.id')
             ->where('achievements_usermap.user_id', $data['user_id']);
         }*/
-        $sentencePair = $this->join('lgt_sentences s2', 's2.group_id = lgt_sentences.group_id')
+        $sentencePair = $this->join('lgt_sentences s2', 's2.chapter_id = lgt_sentences.chapter_id AND s2.`index` = lgt_sentences.`index`')
         ->select('lgt_sentences.id as source_id, lgt_sentences.sentence as source_text, s2.id as target_id, s2.sentence as target_text')
-        ->where(' lgt_sentences.is_trained IS NULL AND lgt_sentences.language_id = '.$data['source_language_id'].' AND s2.language_id = '.$data['target_language_id'])
+        ->where(' lgt_sentences.is_trained = 0 AND lgt_sentences.language_id = '.$data['source_language_id'].' AND s2.language_id = '.$data['target_language_id'])
         ->limit(1)->get()->getRowArray();
         
 
@@ -102,23 +101,14 @@ class SentenceModel extends Model
         return $result;
     }
 
-
     
     public function createItem ($data)
     {
-        $data = [
-            'chapter_id' => $data['chapter_id'], 
-            'text' => ($data['text']) ? $data['text'] : NULL, 
-            'index' => $data['index'], 
-            'language_id' => $data['language_id'], 
-            'is_trained' => $data['is_trained']
-        ];
         $this->transBegin();
-        $text_id = $this->insert($data, true);
-
+        $sentence_id = $this->insert($data, true);
         $this->transCommit();
 
-        return $text_id;        
+        return $sentence_id;        
     }
     public function updateItem ($data)
     {
@@ -139,28 +129,7 @@ class SentenceModel extends Model
         $db->query("TRUNCATE lgt_tokens");
         return;
     }
-    public function createSentence($sentence, $language, $group_id)
-    {
-        $db = \Config\Database::connect();
-        $sql = "
-            INSERT INTO
-            lgt_sentences
-            SET
-                id          = NULL, 
-                sentence       = ".$db->escape($sentence).", 
-                language_id = ".(int) $language.",
-                group_id = ".(int) $group_id."
-        ";
-        $db->query($sql);
-        return $db->insertID();
-    }
 
-    public function getLastSentenceGroupId()
-    {
-        $db = \Config\Database::connect();
-        $sql = " SELECT MAX(group_id)+1 as lastId FROM lgt_sentences";
-        return $db->query($sql)->getRow()->lastId;
-    }
     public function getSentenceTokens($sentence_id)
     {
         $db = \Config\Database::connect();

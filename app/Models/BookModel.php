@@ -20,7 +20,7 @@ class BookModel extends Model
         'title', 
         'year', 
         'language_id', 
-        'status'
+        'is_built'
     ];
     
     protected $useTimestamps = false;
@@ -55,7 +55,7 @@ class BookModel extends Model
         $books = $this->groupBy('lgt_books.id')->orderBy('title')->get()->getResultArray();
         
         if(empty($books)){
-            return false;
+            return [];
         }
         return $books;
     }
@@ -88,7 +88,7 @@ class BookModel extends Model
             'author' => $data['author'], 
             'year' => $data['year'], 
             'language_id' => null,
-            'status' => 0
+            'is_built' => false
         ];
         $this->transBegin();
         $book_id = $this->insert($data, true);

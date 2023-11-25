@@ -37,6 +37,8 @@ $routes->post('/Book/(:any)', 'Book::$1');
 $routes->post('/Chapter/(:any)', 'Chapter::$1');
 $routes->post('/Text/(:any)', 'Text::$1');
 $routes->post('/Uploader/(:any)', 'Uploader::$1');
+$routes->post('/Word/(:any)', 'Word::$1');
+
 
 
 

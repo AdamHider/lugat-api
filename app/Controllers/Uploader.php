@@ -27,9 +27,8 @@ class Uploader extends BaseController
 
         $file = $this->request->getFile('file');
         
-
         if (!$file->hasMoved()) {
-            $filename = $file->getRandomName();
+            $filename = md5($file->getBasename()).'.txt';
             $file->move(ROOTPATH . 'public/files', $filename);
             return $this->respond(['file' => base_url('files/' . $filename)]);
         }
@@ -39,31 +38,4 @@ class Uploader extends BaseController
         return $this->fail($data);
     }
     
-    private function fileSaveImage( $image_holder_id, $file, $image_holder='store' ){
-        $image_holder=($image_holder=='store_avatar'?'store_avatar':'store');
-        $image_data=[
-            'image_holder'=>$image_holder,
-            'image_holder_id'=>$image_holder_id
-        ];
-        $StoreModel=model('StoreModel');
-        $image_hash=$StoreModel->imageCreate($image_data);
-        if( !$image_hash ){
-            return $this->failForbidden('forbidden');
-        }
-        if( $image_hash === 'limit_exeeded' ){
-            return $this->fail('limit_exeeded');
-        }
-        $file->move(WRITEPATH.'images/', $image_hash.'.webp');
-        
-        try{
-            return \Config\Services::image()
-            ->withFile(WRITEPATH.'images/'.$image_hash.'.webp')
-            ->resize(1600, 1600, true, 'height')
-            ->convert(IMAGETYPE_WEBP)
-            ->save();
-        }catch(\Exception $e){
-            return $e->getMessage();
-        }
-    }
-
 }

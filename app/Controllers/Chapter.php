@@ -58,4 +58,23 @@ class Chapter extends BaseController
 
         return $this->respond($chapter_id);
     }
+    public function deleteItem()
+    {
+        $ChapterModel = model('ChapterModel');
+        $TextModel = model('TextModel');
+        $id = $this->request->getVar('id');
+
+        $result = $ChapterModel->deleteItem(['id'=>$id]);
+        if($result){
+            $TextModel->deleteItem(['chapter_id' => $id]);
+        }
+
+        if ($result === 'forbidden') {
+            return $this->failForbidden();
+        }
+        if($ChapterModel->errors()){
+            return $this->failValidationErrors($ChapterModel->errors());
+        }
+        return $this->respond($result);
+    }
 }
