@@ -45,6 +45,12 @@ class Text extends BaseController
         $TextModel = model('TextModel');
         $data = $this->request->getJSON(true);
 
+        $text = $TextModel->getItem(['chapter_id' => $data['chapter_id'], 'language_id' => $data['language_id']]);
+        if(!empty($text['source']) && $text['source'] !== $data['source']){
+            $filename = array_reverse(explode('/', $text['source']))[0];
+            unlink(ROOTPATH.'public/files/'.$filename);
+        }
+        
         $result = $TextModel->updateItem($data);
 
         if ($result === 'forbidden') {

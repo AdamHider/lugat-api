@@ -51,20 +51,23 @@ function exctractTokens($neuronList)
     }
     return $result;
 }
+
+function clearSentence($sentence) 
+{
+    $sentence = preg_replace('/^[#%]/', '', $sentence);
+    $sentence = str_replace(' - ', ' — ', $sentence);
+    $sentence = preg_replace("/([.,—])(\w)/ui", "\1 \2", $sentence);
+    return trim($sentence);
+}
 function tokenize($sentence)
 {
-    $skip = ['«', '»', '!', '?', '.', ',', ';', ':', '…', '“', '—'];
-    $sentence = mb_strtolower($sentence);
-    $sentence = str_replace(array("\n", "\r"), '', $sentence);
-    foreach($skip as $item){
-        if((int) $item || strpos($sentence, $item) > -1){
-            $sentence = str_replace($item, '', $sentence);
-            continue;
-        }
+    $sentence = mb_strtolower(trim($sentence));
+    preg_match_all('/\w(?<!\d)[\w\'-]*/ui', $sentence, $tokens, PREG_OFFSET_CAPTURE);
+    if(!empty($tokens)){
+        return $tokens[0];
     }
-    $sentence = str_replace('  ',  ' ',$sentence);
-    $sentence = str_replace('ё', 'е', $sentence);
-    return explode(' ', trim($sentence));
+    return [];
+    
 }
 function getSurroundingTokens($index, $tokenList)
 {

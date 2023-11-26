@@ -18,7 +18,8 @@ class TokenModel extends Model
     protected $allowedFields = [
         'word_id', 
         'sentence_id', 
-        'index'
+        'index',
+        'char_index'
     ];
     
     protected $useTimestamps = false;
@@ -69,10 +70,8 @@ class TokenModel extends Model
     public function createItem ($data)
     {
         $this->validationRules = [];
-        $this->transBegin();
         $word_id = $this->insert($data, true);
 
-        $this->transCommit();
 
         return $word_id;        
     }

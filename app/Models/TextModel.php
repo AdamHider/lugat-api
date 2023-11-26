@@ -46,6 +46,7 @@ class TextModel extends Model
     }
     public function getItem ($data) 
     {
+        
         $text = $this->select('*')->where(['chapter_id' => $data['chapter_id'], 'language_id' => $data['language_id']])->get()->getRowArray();
 
         if(empty($text)){

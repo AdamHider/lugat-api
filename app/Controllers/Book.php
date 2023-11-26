@@ -92,11 +92,12 @@ class Book extends BaseController
         set_time_limit(9000000000);
         ini_set('memory_limit', '1500M'); 
         $SentenceModel = model('SentenceModel');
-        
+        helper('Token');
         foreach(file($data['source']) as $lineIndex => $sentence) {
             if(empty(trim($sentence))){
                 continue;
             }
+            $sentence = clearSentence($sentence);  
             $sentenceId = $SentenceModel->createItem([
                 'book_id' => $book_id,
                 'chapter_id' => $data['chapter_id'],
@@ -115,12 +116,15 @@ class Book extends BaseController
         $TokenModel = model('TokenModel');
         $tokenList = tokenize($sentence);
         foreach($tokenList as $index => &$token){
-            $word = $WordModel->getItem($token, $language_id); 
-            $wordId = $word['id'] ?? $WordModel->createItem(['word' => $token, 'language_id' => $language_id]); 
+            $tokenWord = $token[0];
+            $tokenCharIndex = $token[1]*1;
+            $word = $WordModel->getItem($tokenWord, $language_id); 
+            $wordId = $word['id'] ?? $WordModel->createItem(['word' => $tokenWord, 'language_id' => $language_id]); 
             $TokenModel->createItem([
                 'word_id' => $wordId, 
                 'sentence_id' => $sentenceId, 
-                'index' => $index]);
+                'index' => $index,
+                'char_index' => $tokenCharIndex]);
         }
         return $tokenList;
     }
