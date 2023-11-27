@@ -5,18 +5,19 @@ namespace App\Models;
 use CodeIgniter\Model;
 use CodeIgniter\Database\BaseBuilder;
 
-class WordModel extends Model
+class LemmaModel extends Model
 {
-    protected $table      = 'lgt_words';
+    protected $table      = 'lgt_lemmas';
     protected $primaryKey = 'id';
 
     protected $useAutoIncrement = true;
 
     protected $returnType = 'array';
+    protected $useSoftDeletes = true;
 
     protected $allowedFields = [
-        'lemma_id',
-        'word', 
+        'id',
+        'lemma', 
         'language_id'
     ];
     
@@ -33,29 +34,6 @@ class WordModel extends Model
             return false;
         }
         return $word;
-    }
-    public function getList ($data) 
-    {
-        $this->select('lgt_words.*');
-        
-        if(!empty($data['word'])){
-            $this->where('lgt_words.word', $this->escape($data['word']));
-        }
-        if(isset($data['lemmaless'])){
-            $this->where('lgt_words.lemma_id IS NULL');
-        }
-        if(isset($data['limit']) && isset($data['offset'])){
-            $this->limit($data['limit'], $data['offset']);
-        } else {
-            $this->limit(0, 0);
-        }
-
-        $words = $this->orderBy('word')->get()->getResultArray();
-        
-        if(empty($words)){
-            return [];
-        }
-        return $words;
     }
     
     public function createItem ($data)

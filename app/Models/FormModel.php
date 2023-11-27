@@ -5,9 +5,9 @@ namespace App\Models;
 use CodeIgniter\Model;
 use CodeIgniter\Database\BaseBuilder;
 
-class ChapterModel extends Model
+class FormModel extends Model
 {
-    protected $table      = 'lgt_book_chapters';
+    protected $table      = 'lgt_forms';
     protected $primaryKey = 'id';
 
     protected $useAutoIncrement = true;
@@ -25,7 +25,7 @@ class ChapterModel extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
-    
+
     public function getList ($data) 
     {
 

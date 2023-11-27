@@ -23,20 +23,14 @@ class BookModel extends Model
         'is_built'
     ];
     
-    protected $useTimestamps = false;
+    protected $useTimestamps = true;
         
+    protected $createdField  = 'created_at';
+    protected $updatedField  = 'updated_at';
+    protected $deletedField  = 'deleted_at';
 
     public function getList ($data) 
     {
-
-        /*
-        $DescriptionModel = model('DescriptionModel');
-        
-        if($data['user_id']){
-            $this->join('achievements_usermap', 'achievements_usermap.item_id = achievements.id')
-            ->where('achievements_usermap.user_id', $data['user_id']);
-        }*/
-        
         $this->table('lgt_books')
         ->join('lgt_book_chapters', 'lgt_book_chapters.book_id = lgt_books.id', 'left')
         ->select('lgt_books.*, COUNT(lgt_book_chapters.id) as chapters');

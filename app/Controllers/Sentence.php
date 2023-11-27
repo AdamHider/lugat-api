@@ -55,6 +55,20 @@ class Sentence extends BaseController
 
         return $this->respond($result);
     }
+    public function setSkipped()
+    {
+        $SentenceModel = model('SentenceModel');
+
+        $id = $this->request->getVar('id');
+
+        $result = $SentenceModel->updateItem(['id' => $id, 'is_skipped' => 1]);
+
+        if ($result == 'not_found') {
+            return $this->failNotFound('not_found');
+        }
+
+        return $this->respond($result);
+    }
     
     
 

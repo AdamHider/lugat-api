@@ -21,8 +21,12 @@ class TextModel extends Model
         'is_built'
     ];
     
-    protected $useTimestamps = false;
+    protected $useTimestamps = true;
         
+    protected $createdField  = 'created_at';
+    protected $updatedField  = 'updated_at';
+    protected $deletedField  = 'deleted_at';
+    
     public function getList ($data) 
     {
         
