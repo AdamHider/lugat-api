@@ -34,7 +34,6 @@ class Word extends BaseController
         $data = $this->request->getJSON(true);
 
         $result = $WordModel->updateItem($data);
-        
 
         if ($result === 'forbidden') {
             return $this->failForbidden();

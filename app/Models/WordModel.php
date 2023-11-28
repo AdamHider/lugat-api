@@ -68,6 +68,16 @@ class WordModel extends Model
 
         return $word_id;        
     }
+    public function updateItem ($data)
+    {
+        $this->transBegin();
+        
+        $this->update(['id'=>$data['id']], $data);
+
+        $this->transCommit();
+
+        return $data['id'];        
+    }
     public function predictList ($data)
     {
         $db = db_connect();

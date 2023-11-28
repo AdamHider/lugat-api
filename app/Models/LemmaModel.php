@@ -46,6 +46,37 @@ class LemmaModel extends Model
 
         return $word_id;        
     }
+    public function updateItem ($data)
+    {
+        $this->transBegin();
+        
+        $this->update(['id'=>$data['id']], $data);
+
+        $this->transCommit();
+
+        return $data['id'];        
+    }
+    public function autocomplete ($data) 
+    {
+        $this->select('lgt_lemmas.*');
+        
+        if(!empty($data['filter']->lemma)){
+            $this->like('lgt_lemmas.lemma', $data['filter']->lemma);
+        }
+        if(isset($data['limit']) && isset($data['offset'])){
+            $this->limit($data['limit'], $data['offset']);
+        } else {
+            $this->limit(0, 0);
+        }
+
+        $lemmas = $this->orderBy('lemma')->get()->getResultArray();
+        
+        if(empty($lemmas)){
+            return [];
+        }
+        return $lemmas;
+    }
+
     public function predictList ($data)
     {
         $db = db_connect();
