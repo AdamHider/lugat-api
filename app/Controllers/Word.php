@@ -8,6 +8,25 @@ class Word extends BaseController
 {
     use ResponseTrait;
 
+    public function getItem()
+    {
+        $WordModel = model('WordModel');
+
+        $word_id = $this->request->getVar('word_id');
+        $filter = $this->request->getVar('filter');
+        $data = [
+            'filter' => $filter,
+            'word_id' => $word_id
+        ];
+
+        $book = $WordModel->getItem($data);
+
+        if ($book == 'not_found') {
+            return $this->failNotFound('not_found');
+        }
+
+        return $this->respond($book);
+    }
     public function getList()
     {
         $WordModel = model('WordModel');

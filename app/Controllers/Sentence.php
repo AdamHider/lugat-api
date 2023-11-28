@@ -40,6 +40,30 @@ class Sentence extends BaseController
 
         return $this->respond($result);
     }
+    public function getList()
+    {
+        $SentenceModel = model('SentenceModel');
+
+        $word = $this->request->getVar('word');
+        $language_id = $this->request->getVar('language_id');
+        $limit = $this->request->getVar('limit');
+        $offset = $this->request->getVar('offset');
+        
+        $data = [
+            'word' => $word,
+            'language_id' => $language_id,
+            'limit' => $limit,
+            'offset' => $offset
+        ];
+
+        $result = $SentenceModel->getList($data);
+
+        if ($result == 'not_found') {
+            return $this->failNotFound('not_found');
+        }
+
+        return $this->respond($result);
+    }
 
     public function setTrained()
     {

@@ -25,9 +25,23 @@ class WordModel extends Model
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
 
-    public function getItem($word, $languageId)
+    public function getItem($data)
     {
-        $word = $this->where("word = ".$this->escape($word)." AND language_id = ".$languageId)->get()->getRowArray();
+        
+        $this->join('lgt_lemmas', 'lgt_words.lemma_id = lgt_lemmas.id', 'left')
+        ->join('lgt_languages', 'lgt_words.language_id = lgt_languages.id', 'left');
+
+        if(!empty($data['word_id'])){
+            $this->where('lgt_words.id', $data['word_id']); 
+        }
+        if(!empty($data['filter']['word'])){
+            $this->where('lgt_words.word', $this->escape($data['filter']['word']));
+        }
+        if(!empty($data['filter']['language_id'])){
+            $this->where('lgt_words.language_id', $data['filter']['language_id']);
+        }
+
+        $word = $this->select('lgt_words.*, lgt_lemmas.lemma, lgt_languages.title as language')->get()->getRowArray();
 
         if(empty($word)){
             return false;

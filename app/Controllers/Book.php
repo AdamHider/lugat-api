@@ -8,7 +8,6 @@ class Book extends BaseController
     use ResponseTrait;
     public function getItem()
     {
-        
         $BookModel = model('BookModel');
 
         $book_id = $this->request->getVar('book_id');
@@ -63,6 +62,7 @@ class Book extends BaseController
         }
         return $this->respond($result);
     }
+    
     public function buildItem()
     {
 
@@ -119,7 +119,7 @@ class Book extends BaseController
         foreach($tokenList as $index => &$token){
             $tokenWord = $token[0];
             $tokenCharIndex = $token[1]*1;
-            $word = $WordModel->getItem($tokenWord, $language_id); 
+            $word = $WordModel->getItem(['word' => $tokenWord, 'language_id' => $language_id]); 
             $wordId = $word['id'] ?? $WordModel->createItem(['lemma_id' => 0, 'word' => $tokenWord, 'language_id' => $language_id]); 
             $TokenModel->createItem([
                 'word_id' => $wordId, 

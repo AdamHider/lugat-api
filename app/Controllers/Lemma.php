@@ -24,7 +24,7 @@ class Lemma extends BaseController
     {
         $LemmaModel = model('LemmaModel');
         $data = $this->request->getJSON(true);
-        if($data['id']){
+        if(isset($data['id'])){
             $result = $LemmaModel->updateItem($data);
         } else {
             $result = $LemmaModel->createItem($data);
@@ -55,5 +55,30 @@ class Lemma extends BaseController
         }
         return $this->respond($result, 200);
     }
+    public function lemmatize()
+    {
+        $LemmaModel = model('LemmaModel');
+        $FormModel = model('FormModel');
 
+        $lemma = $this->request->getVar('lemma');
+        $word = $this->request->getVar('word');
+        $language_id = $this->request->getVar('language_id');
+        $data = [
+            'lemma' => $lemma,
+            'word' => $word,
+            'language_id' => $language_id
+        ];
+        if( (int) $language_id === 1){
+            $form = $LemmaModel->lemmatize($data);
+            if($form){
+                $result = $FormModel->createItem($form);
+            }
+        }
+        if(!$result){
+            return $this->failNotFound('not_found');
+        }
+        return $this->respond($result, 200);
+    }
+
+    
 }

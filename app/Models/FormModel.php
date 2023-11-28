@@ -14,10 +14,10 @@ class FormModel extends Model
 
     protected $returnType = 'array';
     protected $allowedFields = [
-        'book_id', 
-        'number', 
-        'title',
-        'is_built'
+        'form', 
+        'template', 
+        'replace', 
+        'language_id'
     ];
     
     protected $useTimestamps = true;
@@ -58,16 +58,8 @@ class FormModel extends Model
     }
     public function createItem ($data)
     {
-        $this->validationRules = [];
-        $data = [
-            'book_id' => $data['book_id'], 
-            'number' => $data['number'],
-            'title' => null,
-            'is_built' => 0
-        ];
         $this->transBegin();
         $book_id = $this->insert($data, true);
-
         $this->transCommit();
 
         return $book_id;        

@@ -30,25 +30,44 @@ class SentenceModel extends Model
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
 
+    public function getList ($data) 
+    {
+        if(!empty($data['word'])){
+            $this->join('lgt_tokens t', 't.sentence_id = lgt_sentences.id', 'left')
+            ->join('lgt_words w', 'w.id = t.word_id', 'left')->select('GROUP_CONCAT(t.char_index) char_idxs, GROUP_CONCAT(w.word) words')
+            ->where('w.word', $data['word']);
+        }
+        if(!empty($data['language_id'])){
+            $this->like('lgt_sentences.language_id', $data['language_id']);
+        }
+        if(isset($data['limit']) && isset($data['offset'])){
+            $this->limit($data['limit'], $data['offset']);
+        } else {
+            $this->limit(0, 0);
+        }
 
+        $sentences = $this->select('lgt_sentences.*')->groupBy('lgt_sentences.id')->get()->getResultArray();
+        
+        if(empty($sentences)){
+            return [];
+        }
+        if(!empty($data['word'])){
+            foreach($sentences as &$sentence){
+                $sentence['sentence'] = $this->markupTokens($sentence['sentence'], $sentence['char_idxs'], $sentence['words']);
+            }
+        }
+        
+        return $sentences;
+    }
 
     public function getPair ($data) 
     {
-
-        /*
-        $DescriptionModel = model('DescriptionModel');
-        
-        if($data['user_id']){
-            $this->join('achievements_usermap', 'achievements_usermap.item_id = achievements.id')
-            ->where('achievements_usermap.user_id', $data['user_id']);
-        }*/
         $sentencePair = $this->join('lgt_sentences s2', 's2.chapter_id = lgt_sentences.chapter_id AND s2.`index` = lgt_sentences.`index`')
         ->select('lgt_sentences.id as source_id, lgt_sentences.sentence as source_text, s2.id as target_id, s2.sentence as target_text')
         ->where(' lgt_sentences.is_trained = 0 AND lgt_sentences.is_skipped = 0 AND lgt_sentences.language_id = '.$data['source_language_id'].' AND s2.language_id = '.$data['target_language_id'])
         ->orderBy('LENGTH(lgt_sentences.sentence)')
         ->limit(1)->get()->getRowArray();
         
-
         return $sentencePair;
     }
     public function getPairList ($data) 
@@ -76,40 +95,34 @@ class SentenceModel extends Model
 
         return $result;
     }
-
     private function markupList($sentenceGroups)
     {
         $result = [];
         foreach($sentenceGroups as $group){
-            $sentenceDiff = 0;
-            $wrapTags = [
-                'start' => '<b>',
-                'end' => '</b>'
-            ];
-            $sourceIndexes = array_combine(explode(',', $group['source_char_idxs']), explode(',', $group['source_words']));
-            ksort($sourceIndexes);
-            foreach($sourceIndexes as $sourceIndex => $sourceWord){
-                $group['source_sentence'] = substr_replace($group['source_sentence'], $wrapTags['start'], $sourceIndex+$sentenceDiff, 0);
-                $sentenceDiff += strlen($wrapTags['start']);
-                $group['source_sentence'] = substr_replace($group['source_sentence'], $wrapTags['end'], ($sourceIndex + strlen($sourceWord))+$sentenceDiff, 0);
-                $sentenceDiff += strlen($wrapTags['end']);
-            }
-            $sentenceDiff = 0;
-            $targetIndexes = array_combine(explode(',', $group['target_char_idxs']), explode(',', $group['target_words']));
-            ksort($targetIndexes);
-            foreach($targetIndexes as $targetIndex => $targetWord){
-                $group['target_sentence'] = substr_replace($group['target_sentence'], $wrapTags['start'], $targetIndex+$sentenceDiff, 0);
-                $sentenceDiff += strlen($wrapTags['start']);
-                $group['target_sentence'] = substr_replace($group['target_sentence'], $wrapTags['end'], ($targetIndex + strlen($targetWord))+$sentenceDiff, 0);
-                $sentenceDiff += strlen($wrapTags['end']);
-            }
             $result[] = [
-                'source_sentence' => $group['source_sentence'],
-                'target_sentence' => $group['target_sentence']
+                'source_sentence' => $this->markupTokens($group['source_sentence'], $group['source_char_idxs'], $group['source_words']),
+                'target_sentence' => $this->markupTokens($group['target_sentence'], $group['target_char_idxs'], $group['target_words'])
             ];
-            
         }
         return $result;
+    }
+
+    private function markupTokens($sentence, $char_idxs, $words)
+    {
+        $wrapTags = [
+            'start' => '<b>',
+            'end' => '</b>'
+        ];
+        $sentenceDiff = 0;
+        $indexes = array_combine(explode(',', $char_idxs), explode(',', $words));
+        ksort($indexes);
+        foreach($indexes as $index => $word){
+            $sentence = substr_replace($sentence, $wrapTags['start'], $index+$sentenceDiff, 0);
+            $sentenceDiff += strlen($wrapTags['start']);
+            $sentence = substr_replace($sentence, $wrapTags['end'], ($index + strlen($word))+$sentenceDiff, 0);
+            $sentenceDiff += strlen($wrapTags['end']);
+        }
+        return $sentence;
     }
 
     

@@ -100,4 +100,38 @@ class LemmaModel extends Model
         return $result;        
     }
 
+    public function lemmatize ($data)
+    {
+        $splittedLemma = mb_str_split($data['lemma']);
+        $splittedWord = mb_str_split($data['word']);
+        $affix = [];
+        $diff = [];
+        $lemma = [];
+        foreach($splittedWord as $index => $wordChar){
+            if(!isset($splittedLemma[$index])){
+                $affix[] = $wordChar;
+                continue;
+            };
+            if($splittedLemma[$index] !== $wordChar){
+                //check rules
+                $affix[] = $wordChar;
+                $lemma[] = $splittedLemma[$index];
+                $diff[] = $splittedLemma[$index];
+                continue;
+            };
+            $lemma[] = $wordChar;
+        }
+        if(count($affix) == count($splittedWord)){
+            return false;
+        }
+        return [
+            'template' => '',
+            'form' => implode('', $affix),
+            'replace' => implode('', $diff),
+            'language_id' => $data['language_id']
+        ];      
+    }
+
+    
+
 }
