@@ -16,6 +16,7 @@ class WordModel extends Model
 
     protected $allowedFields = [
         'lemma_id',
+        'form_id',
         'word', 
         'language_id'
     ];

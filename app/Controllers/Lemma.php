@@ -57,27 +57,32 @@ class Lemma extends BaseController
     }
     public function lemmatize()
     {
+        $WordModel = model('WordModel');
         $LemmaModel = model('LemmaModel');
         $FormModel = model('FormModel');
 
         $lemma = $this->request->getVar('lemma');
-        $word = $this->request->getVar('word');
-        $language_id = $this->request->getVar('language_id');
+        $word_id = $this->request->getVar('word_id');
+        $word = $WordModel->getItem(['word_id' => $word_id]);
         $data = [
             'lemma' => $lemma,
-            'word' => $word,
-            'language_id' => $language_id
+            'word' => $word['word'],
+            'language_id' => $word['language_id']
         ];
-        if( (int) $language_id === 1){
-            $form = $LemmaModel->lemmatize($data);
-            if($form){
-                $result = $FormModel->createItem($form);
+        $form_id = false;
+        if( (int) $data['language_id'] === 1){
+            $formData = $LemmaModel->lemmatize($data);
+            $form = $FormModel->getItem($formData);
+            if(!empty($form)){
+                $form_id = $form['id'];
+            } else {
+                $form_id = $FormModel->createItem($formData); 
             }
         }
-        if(!$result){
+        if(!$form_id){
             return $this->failNotFound('not_found');
         }
-        return $this->respond($result, 200);
+        return $this->respond(['form_id' => $form_id], 200);
     }
 
     

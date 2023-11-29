@@ -46,22 +46,30 @@ class FormModel extends Model
         }
         return $chapters;
     }
-    public function getItem ($id) 
+    public function getItem ($data) 
     {
-        $chapter = $this->where('id', $id)->get()->getRowArray();
         
-        if(empty($chapter)){
+        if(isset($data['form'])){
+            $this->where('lgt_forms.form', $data['form']);
+        }
+        
+        if(isset($data['replace'])){
+            $this->where('lgt_forms.replace', $data['replace']);
+        }
+        if(isset($data['language_id'])){
+            $this->where('lgt_forms.language_id', $data['language_id']);
+        }
+        
+        $form = $this->get()->getRowArray();
+        if(empty($form)){
             return false;
         }
         
-        return $chapter;
+        return $form;
     }
     public function createItem ($data)
     {
-        $this->transBegin();
         $book_id = $this->insert($data, true);
-        $this->transCommit();
-
         return $book_id;        
     }
     public function updateItem ($data)
