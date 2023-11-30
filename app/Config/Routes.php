@@ -39,6 +39,7 @@ $routes->post('/Text/(:any)', 'Text::$1');
 $routes->post('/Uploader/(:any)', 'Uploader::$1');
 $routes->post('/Word/(:any)', 'Word::$1');
 $routes->post('/Lemma/(:any)', 'Lemma::$1');
+$routes->post('/Form/(:any)', 'Form::$1');
 
 
 

@@ -26,25 +26,14 @@ class FormModel extends Model
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
 
-    public function getList ($data) 
+    public function predictList ($data) 
     {
 
-        $TextModel = model('TextModel');
-        $this->join('lgt_texts', 'lgt_book_chapters.id = lgt_texts.chapter_id', 'left')
-        ->join('lgt_languages', 'lgt_texts.language_id = lgt_languages.id', 'left')
-        ->select('lgt_book_chapters.*, COUNT(lgt_texts.id) as total_texts, GROUP_CONCAT(lgt_languages.code) as languages')
-        ->where('lgt_book_chapters.book_id', $data['book_id']);
+        $this->select('template, form, replace, LEVENSTEIN(form, '.$this->escape($data['word']).') AS distance');
         
-        $chapters = $this->groupBy('lgt_book_chapters.id')->get()->getResultArray();
+        $forms = $this->where('language_id', $data['language_id'])->having('distance = 0')->get()->getResultArray();
         
-        if(empty($chapters)){
-            return false;
-        }
-        foreach($chapters as &$chapter){
-            if(!empty($chapter['languages'])) $chapter['languages'] = explode(',', $chapter['languages']);
-            $chapter['texts'] = $TextModel->getList(["chapter_id" => $chapter['id']]);
-        }
-        return $chapters;
+        return $forms;
     }
     public function getItem ($data) 
     {
@@ -85,5 +74,29 @@ class FormModel extends Model
     public function deleteItem ($data)
     {
         return $this->delete($data);
+    }
+    
+    public function createItemFromLemma($data)
+    {
+        $WordModel = model('WordModel');
+        helper('Token');
+        $word = $WordModel->getItem(['word_id' => $data['word_id']]);
+
+        $data = [
+            'lemma' => $data['lemma'],
+            'word' => $word['word'],
+            'language_id' => $word['language_id']
+        ];
+        $result = false;
+        if( (int) $data['language_id'] === 1){
+            $formData = lemmatize($data['lemma'], $data['word'], $data['language_id']);
+            $form = $this->getItem($formData);
+            if(!empty($form)){
+                $result = $form['id'];
+            } else {
+                $result = $this->createItem($formData); 
+            }
+        }
+        return $result;
     }
 }

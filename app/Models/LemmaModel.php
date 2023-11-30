@@ -26,34 +26,41 @@ class LemmaModel extends Model
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
 
-    public function getItem($word, $languageId)
+    public function getItem($lemma, $languageId)
     {
-        $word = $this->where("word = ".$this->escape($word)." AND language_id = ".$languageId)->get()->getRowArray();
+        $lemma = $this->where("lemma = ".$this->escape($lemma)." AND language_id = ".$languageId)->get()->getRowArray();
 
-        if(empty($word)){
+        if(empty($lemma)){
             return false;
         }
-        return $word;
+        return $lemma;
+    }
+    public function getList ($data) 
+    {
+        $this->select('lgt_lemmas.*');
+        
+        if(!empty($data['word_id'])){
+            $this->join('lgt_word_forms wf', 'wf.lemma_id = lgt_lemmas.id', 'left');
+            $this->where('wf.word_id', $data['word_id']);
+        }
+
+        $lemmas = $this->get()->getResultArray();
+        
+        if(empty($lemmas)){
+            return [];
+        }
+        return $lemmas;
     }
     
     public function createItem ($data)
     {
         $this->validationRules = [];
-        $this->transBegin();
-        $word_id = $this->insert($data, true);
-
-        $this->transCommit();
-
-        return $word_id;        
+        $lemma_id = $this->insert($data, true);
+        return $lemma_id;        
     }
     public function updateItem ($data)
     {
-        $this->transBegin();
-        
         $this->update(['id'=>$data['id']], $data);
-
-        $this->transCommit();
-
         return $data['id'];        
     }
     public function autocomplete ($data) 
@@ -76,62 +83,54 @@ class LemmaModel extends Model
         }
         return $lemmas;
     }
-
     public function predictList ($data)
     {
-        $db = db_connect();
-        $tokenList = explode(' ', $data['token']);
-        $subquery = $db->table('lgt_sentences s')
-        ->join('lgt_tokens t', 's.id = t.sentence_id')
-        ->join('lgt_words w', 'w.id = t.word_id AND w.word IN ("'.implode('","',$tokenList).'")')
-        ->join('lgt_token_relations tr', 't.id = tr.token_id')
-        ->join('lgt_token_relations tr1', 'tr.group_id = tr1.group_id')
-        ->join('lgt_tokens t1', 't1.id = tr1.token_id')
-        ->join('lgt_words w1', 'w1.id = t1.word_id AND w1.language_id = '.$data['target_language_id'])
-        ->select("GROUP_CONCAT(DISTINCT w1.word  ORDER BY t1.`index` SEPARATOR ' ') AS word, COUNT(t1.id) AS freq")
-        ->like('s.sentence', $data['token'])
-        ->where("s.language_id = ".$data['source_language_id'])
-        ->groupBy('tr.id');
-        $builder = $db->newQuery()->fromSubquery($subquery, 'q');
-        $result = $builder
-        ->select("q.word, SUM(q.freq) as freq")
-        ->groupBy('q.word')
-        ->orderBy('freq DESC')->get()->getResultArray();
-        return $result;        
+        $FormModel = model('FormModel');
+        helper('Token');
+
+        $result = [];
+
+        $exactLemma = $this->getItem($data['word'], $data['language_id']);
+        if(!empty($exactLemma)) $result[] = $this->createEmptyItem($exactLemma['id'], $exactLemma['lemma'], $exactLemma['language_id'], 0);
+        
+        $this->select('*, LEVENSTEIN(lemma, '.$this->escape($data['word']).') AS distance')
+        ->where('language_id ='.$data['language_id']);
+        if(!empty($exactLemma)){
+            $this->where('lemma !='.$this->escape($exactLemma['lemma']));
+        }
+        $nearLemmas = $this->having('distance = 0')->get()->getResultArray();
+        $result = array_merge($result, $nearLemmas);
+
+        if(empty( $result)){
+            $forms = $FormModel->predictList($data);
+            foreach($forms as $form){
+                $lemmaCalculated = unlemmatize($form, $data['word'], $data['language_id']);
+                if(empty($lemmaCalculated)){
+                    continue;
+                }
+                $lemma = $this->getItem($lemmaCalculated, $data['language_id']);
+                if(empty($lemma)){
+                    $lemma = $this->createEmptyItem(null, $lemmaCalculated, $data['language_id'], 1);   
+                } else {
+                    $lemma['distance'] = 0;
+                }
+                $result[] = $lemma;
+            }
+        }
+        if(empty($result)){
+            $result[] = $this->createEmptyItem(null, $data['word'], $data['language_id'], 2);
+        }
+        usort($result, function($a, $b) {return strcmp($a['distance'], $b['distance']);});
+        return $result;
     }
 
-    public function lemmatize ($data)
+    private function createEmptyItem($id, $lemma, $language_id, $distance)
     {
-        $splittedLemma = mb_str_split($data['lemma']);
-        $splittedWord = mb_str_split($data['word']);
-        $affix = [];
-        $diff = [];
-        $lemma = [];
-        foreach($splittedWord as $index => $wordChar){
-            if(!isset($splittedLemma[$index])){
-                $affix[] = $wordChar;
-                continue;
-            };
-            if($splittedLemma[$index] !== $wordChar){
-                //check rules
-                $affix[] = $wordChar;
-                $lemma[] = $splittedLemma[$index];
-                $diff[] = $splittedLemma[$index];
-                continue;
-            };
-            $lemma[] = $wordChar;
-        }
-        if(count($affix) == count($splittedWord)){
-            return false;
-        }
         return [
-            'template' => '',
-            'form' => implode('', $affix),
-            'replace' => implode('', $diff),
-            'language_id' => $data['language_id']
-        ];      
+            'id' => $id,
+            'lemma' => $lemma,
+            'language_id' => $language_id,
+            'distance' => $distance
+        ];    
     }
-
-    
-
 }

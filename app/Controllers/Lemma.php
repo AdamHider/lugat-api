@@ -8,13 +8,12 @@ class Lemma extends BaseController
 {
     use ResponseTrait;
 
-    public function getTranslations()
+    public function getList()
     {
         $LemmaModel = model('LemmaModel');
-        $result = false;
+
         $data = $this->request->getJSON(true);
-        
-        $result = $LemmaModel->predictList($data);
+        $result = $LemmaModel->getList($data);
         if(!$result){
             return $this->failNotFound('not_found');
         }
@@ -35,7 +34,10 @@ class Lemma extends BaseController
         if($LemmaModel->errors()){
             return $this->failValidationErrors($LemmaModel->errors());
         }
-        return $this->respond($result);
+        if((bool) !$result){
+            return $this->fail(400);
+        }
+        return $this->respond($result, 200);
     }
     public function autocomplete()
     {
@@ -55,35 +57,23 @@ class Lemma extends BaseController
         }
         return $this->respond($result, 200);
     }
-    public function lemmatize()
-    {
-        $WordModel = model('WordModel');
-        $LemmaModel = model('LemmaModel');
-        $FormModel = model('FormModel');
 
-        $lemma = $this->request->getVar('lemma');
-        $word_id = $this->request->getVar('word_id');
-        $word = $WordModel->getItem(['word_id' => $word_id]);
-        $data = [
-            'lemma' => $lemma,
-            'word' => $word['word'],
-            'language_id' => $word['language_id']
-        ];
-        $form_id = false;
+    public function predictList()
+    {
+        $LemmaModel = model('LemmaModel');
+        $result = false;
+        $data = $this->request->getJSON(true);
+        
         if( (int) $data['language_id'] === 1){
-            $formData = $LemmaModel->lemmatize($data);
-            $form = $FormModel->getItem($formData);
-            if(!empty($form)){
-                $form_id = $form['id'];
-            } else {
-                $form_id = $FormModel->createItem($formData); 
-            }
+            $result = $LemmaModel->predictList($data);
         }
-        if(!$form_id){
+        if(!$result){
             return $this->failNotFound('not_found');
         }
-        return $this->respond(['form_id' => $form_id], 200);
+        return $this->respond($result, 200);
     }
+
+
 
     
 }

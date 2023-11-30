@@ -31,16 +31,7 @@ class Word extends BaseController
     {
         $WordModel = model('WordModel');
 
-        $filter = $this->request->getVar('filter');
-        $lemmaless = $this->request->getVar('lemmaless');
-        $limit = $this->request->getVar('limit');
-        $offset = $this->request->getVar('offset');
-        $data = [
-            'filter' => $filter,
-            'lemmaless' => $lemmaless,
-            'limit' => $limit,
-            'offset' => $offset
-        ];
+        $data = $this->request->getJSON(true);
         $result = $WordModel->getList($data);
         if(!$result){
             return $this->failNotFound('not_found');
@@ -73,6 +64,20 @@ class Word extends BaseController
             return $this->failNotFound('not_found');
         }
         return $this->respond($result, 200);
+    }
+
+    public function linkLemmas ()
+    {
+        $WordModel = model('WordModel');
+        $result = false;
+        $data = $this->request->getJSON(true);
+
+        $result = $WordModel->linkLemmas($data);
+        if(!$result){
+            return $this->failNotFound('not_found');
+        }
+        return $this->respond($result, 200);
+
     }
 
 }

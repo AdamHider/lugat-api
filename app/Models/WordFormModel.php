@@ -13,12 +13,21 @@ class WordFormModel extends Model
 
     protected $returnType = 'array';
     protected $allowedFields = [
+        'word_id',
         'form_id', 
-        'word_id'
+        'lemma_id'
     ];
     
     protected $useTimestamps = false;
 
+    public function getItem($data)
+    {
+        $wordForm = $this->where("word_id = ".$data['word_id']." AND lemma_id = ".$data['lemma_id'])->get()->getRowArray();
+        if(empty($wordForm)){
+            return false;
+        }
+        return $wordForm;
+    }
     public function createItem ($data)
     {
         $this->transBegin();

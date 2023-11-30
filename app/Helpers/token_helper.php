@@ -79,3 +79,66 @@ function getSurroundingTokens($index, $tokenList)
     
     return $result;
 }
+function lemmatize($lemma, $word, $language_id)
+{
+    $splittedLemma = mb_str_split($lemma);
+    $splittedWord = mb_str_split($word);
+    $form = [];
+    $diff = [];
+    $lemma = [];
+    $totalSymbols = count($splittedWord);
+    if(count($splittedLemma) > count($splittedWord)){
+        $totalSymbols = count($splittedLemma);
+    }
+    for($i = 0; $i < $totalSymbols; $i++){
+        if(!isset($splittedWord[$i]) && isset($splittedLemma[$i])){
+            $diff[] = $splittedLemma[$i];
+            continue;
+        };
+        $wordChar = $splittedWord[$i];
+        if(!isset($splittedLemma[$i])){
+            $form[] = $wordChar;
+            continue;
+        };
+        if($splittedLemma[$i] !== $wordChar){
+            $form[] = $wordChar;
+            $lemma[] = $splittedLemma[$i];
+            $diff[] = $splittedLemma[$i];
+            continue;
+        };
+        $lemma[] = $wordChar;
+    }
+    if(count($form) == count($splittedWord)){
+        return false;
+    }
+    return [
+        'template' => '',
+        'form' => implode('', $form),
+        'replace' => implode('', $diff),
+        'language_id' => $language_id
+    ];      
+}
+function unlemmatize($form, $word, $language_id)
+{
+    $splittedWord = mb_str_split($word);
+    $splittedForm = mb_str_split($form['form']);
+    $reversedWord = array_reverse($splittedWord);
+    $reversedForm = array_reverse($splittedForm);
+    $lemma = [];
+    foreach($reversedWord as $index => $wordChar){
+        if(!isset($reversedForm[$index])){
+            $lemma[] = $wordChar;
+            continue;
+        };
+        if($reversedForm[$index] !== $wordChar){
+            break;
+        };
+    }
+    if(empty($lemma)){
+        return '';
+    }
+    $reversedLemma = array_reverse($lemma);
+    return implode('', $reversedLemma).$form['replace'];
+}
+
+

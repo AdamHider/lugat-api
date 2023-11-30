@@ -29,8 +29,7 @@ class WordModel extends Model
     public function getItem($data)
     {
         
-        $this->join('lgt_lemmas', 'lgt_words.lemma_id = lgt_lemmas.id', 'left')
-        ->join('lgt_languages', 'lgt_words.language_id = lgt_languages.id', 'left');
+        $this->join('lgt_languages', 'lgt_words.language_id = lgt_languages.id', 'left');
 
         if(!empty($data['word_id'])){
             $this->where('lgt_words.id', $data['word_id']); 
@@ -42,7 +41,7 @@ class WordModel extends Model
             $this->where('lgt_words.language_id', $data['filter']['language_id']);
         }
 
-        $word = $this->select('lgt_words.*, lgt_lemmas.lemma, lgt_languages.title as language')->get()->getRowArray();
+        $word = $this->select('lgt_words.*, lgt_languages.title as language')->get()->getRowArray();
 
         if(empty($word)){
             return false;
@@ -56,8 +55,15 @@ class WordModel extends Model
         if(!empty($data['word'])){
             $this->where('lgt_words.word', $this->escape($data['word']));
         }
+        if(isset($data['filter']['word'])){
+            $this->like('lgt_words.word', $data['filter']['word']);
+        }
+        if(!empty($data['language_id'])){
+            $this->where('lgt_words.language_id', $this->escape($data['language_id']));
+        }
         if(isset($data['lemmaless'])){
-            $this->where('lgt_words.lemma_id IS NULL');
+            $this->join('lgt_word_forms wf', 'wf.word_id = lgt_words.id', 'left');
+            $this->where('wf.lemma_id IS NULL');
         }
         if(isset($data['limit']) && isset($data['offset'])){
             $this->limit($data['limit'], $data['offset']);
@@ -115,5 +121,27 @@ class WordModel extends Model
         ->orderBy('freq DESC')->get()->getResultArray();
         return $result;        
     }
-
+    public function linkLemmas ($data)
+    {
+        $WordFormModel = model('WordFormModel');
+        $FormModel = model('FormModel');
+        if(empty($data['word_id']) || empty($data['lemmas'])){
+            return false;
+        }
+        foreach($data['lemmas'] as $lemma){
+            $wordForm = $WordFormModel->getItem(['word_id' => $data['word_id'], 'lemma_id' => $lemma['id']]);
+            if(!empty($wordForm)){
+                continue;
+            }
+            $form_id = $FormModel->createItemFromLemma(['word_id' => $data['word_id'], 'lemma' => $lemma['lemma']]);
+            
+            $WordFormModel->createItem([
+                'word_id' => $data['word_id'], 
+                'lemma_id' => $lemma['id'],
+                'form_id' => $form_id
+            ]);
+        }
+        return true;
+    }
+    
 }
