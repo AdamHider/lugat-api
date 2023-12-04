@@ -8,17 +8,15 @@ use CodeIgniter\Database\BaseBuilder;
 class WordFormModel extends Model
 {
     protected $table      = 'lgt_word_forms';
+    protected $primaryKey = 'id';
 
     protected $useAutoIncrement = true;
-
     protected $returnType = 'array';
     protected $allowedFields = [
         'word_id',
         'form_id', 
         'lemma_id'
     ];
-    
-    protected $useTimestamps = false;
 
     public function getItem($data)
     {
@@ -38,6 +36,7 @@ class WordFormModel extends Model
     }
     public function deleteItem ($data)
     {
-        return $this->delete($data);
+        
+        return $this->where($data)->delete();
     }
 }

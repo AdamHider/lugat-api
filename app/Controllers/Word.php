@@ -77,7 +77,24 @@ class Word extends BaseController
             return $this->failNotFound('not_found');
         }
         return $this->respond($result, 200);
+    }
+    public function unlinkLemma ()
+    {
+        $WordFormModel = model('WordFormModel');
+        $result = false;
 
+        $word_id = $this->request->getVar('word_id');
+        $lemma_id = $this->request->getVar('lemma_id');
+        $data = [
+            'word_id' => $word_id,
+            'lemma_id' => $lemma_id
+        ];
+
+        $result = $WordFormModel->deleteItem($data);
+        if(!$result){
+            return $this->failNotFound('not_found');
+        }
+        return $this->respond($result, 200);
     }
 
 }

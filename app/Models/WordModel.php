@@ -143,5 +143,4 @@ class WordModel extends Model
         }
         return true;
     }
-    
 }

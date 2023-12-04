@@ -16,8 +16,7 @@ class ChapterModel extends Model
     protected $allowedFields = [
         'book_id', 
         'number', 
-        'title',
-        'is_built'
+        'title'
     ];
     
     protected $useTimestamps = true;
@@ -62,8 +61,7 @@ class ChapterModel extends Model
         $data = [
             'book_id' => $data['book_id'], 
             'number' => $data['number'],
-            'title' => null,
-            'is_built' => 0
+            'title' => null
         ];
         $this->transBegin();
         $book_id = $this->insert($data, true);

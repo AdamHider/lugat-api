@@ -15,7 +15,6 @@ class BookModel extends Model
     protected $returnType = 'array';
     protected $useSoftDeletes = true;
     protected $allowedFields = [
-        'relation_id', 
         'author', 
         'title', 
         'year', 
@@ -63,12 +62,13 @@ class BookModel extends Model
         }
         if(!empty($data['filter']['chapter_id'])){
             $this->join('lgt_book_chapters', 'lgt_book_chapters.book_id = lgt_books.id')->where('lgt_book_chapters.id', $data['filter']['chapter_id'])
-            ->select('lgt_books.*, lgt_book_chapters.number as chapter, lgt_book_chapters.is_exported as chapter_exported'); 
+            ->select('lgt_books.*, lgt_book_chapters.number as chapter'); 
         }
         $book = $this->get()->getRowArray();
         if(empty($book)){
             return false;
         }
+        $book['is_built'] = (bool) $book['is_built'];
         $book['chapters'] = $ChapterModel->getList(['book_id' => $book['id']]);
         return $book;
     }
@@ -77,7 +77,6 @@ class BookModel extends Model
     {
         $this->validationRules = [];
         $data = [
-            'relation_id' => null,
             'title' => $data['title'], 
             'author' => $data['author'], 
             'year' => $data['year'], 
@@ -93,12 +92,6 @@ class BookModel extends Model
     }
     public function updateItem ($data)
     {
-        $item = $this->getItem($data);
-        if(empty($item['id'])){
-            $data['id'] = $this->createItem($data);
-        } else {
-            $data['id'] = $item['id'];
-        }
         $this->transBegin();
         
         $this->update(['id'=>$data['id']], $data);

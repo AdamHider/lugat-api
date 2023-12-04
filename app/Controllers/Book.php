@@ -81,11 +81,15 @@ class Book extends BaseController
                 }
             }
         }
-
+        $result = true;
+        //$result = $BookModel->updateItem(['id' => $book_id, 'is_built' => true]);
+        if (!$result) {
+            return $this->fail($result);
+        }
         if($BookModel->errors()){
             return $this->failValidationErrors($BookModel->errors());
         }
-        return $this->respond(true);
+        return $this->respond($result);
     }
     public function buildSource($data, $book_id)
     {
