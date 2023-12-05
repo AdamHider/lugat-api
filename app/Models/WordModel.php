@@ -119,6 +119,8 @@ class WordModel extends Model
         ->select("q.word, SUM(q.freq) as freq")
         ->groupBy('q.word')
         ->orderBy('freq DESC')->get()->getResultArray();
+        print_r($this->getLastQuery());
+        die;
         return $result;        
     }
     public function linkLemmas ($data)

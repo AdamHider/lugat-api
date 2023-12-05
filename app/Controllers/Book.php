@@ -63,26 +63,66 @@ class Book extends BaseController
         return $this->respond($result);
     }
     
-    public function buildItem()
+    public function buildItemStart()
     {
 
         $BookModel = model('BookModel');
         $TextModel = model('TextModel');
         $book_id = $this->request->getVar('id');
 
-        $texts = $TextModel->getList(['book_id' => $book_id]);
+        $texts = $TextModel->getList(['book_id' => $book_id, 'is_built' => false]);
         
+        $result = false;
+
         if(!empty($texts)){
-            $SentenceModel = model('SentenceModel');
-            $SentenceModel->forgetAll();
-            foreach($texts as $text){
-                if($text['source']){
-                    $this->buildSource($text, $book_id);
-                }
-            }
+            $result = count($texts);
         }
-        $result = true;
-        //$result = $BookModel->updateItem(['id' => $book_id, 'is_built' => true]);
+        if (!$result) {
+            return $this->fail($result);
+        }
+        if($BookModel->errors()){
+            return $this->failValidationErrors($BookModel->errors());
+        }
+        return $this->respond($result);
+    }
+    public function buildItemProcess()
+    {
+
+        $BookModel = model('BookModel');
+        $TextModel = model('TextModel');
+        $book_id = $this->request->getVar('id');
+
+        $text = $TextModel->getItem(['book_id' => $book_id, 'is_built' => false]);
+        
+        $result = false;
+        
+        if(!empty($text)){
+            if($text['source']){
+                if($this->buildSource($text, $book_id)) $result = $TextModel->updateItem(['id' => $text['id'], 'is_built' => true]);
+            }
+        } else {
+            return $this->failNotFound($result);
+        }
+        if (!$result) {
+            return $this->fail($result);
+        }
+        if($BookModel->errors()){
+            return $this->failValidationErrors($BookModel->errors());
+        }
+        return $this->respond($result);
+    }
+    public function buildItemFinish()
+    {
+
+        $BookModel = model('BookModel');
+        $TextModel = model('TextModel');
+        $book_id = $this->request->getVar('id');
+
+        $texts = $TextModel->getList(['book_id' => $book_id, 'is_built' => false]);
+        $result = false;
+        if(empty($texts)){
+           $result = $BookModel->updateItem(['id' => $book_id, 'is_built' => true]);
+        }
         if (!$result) {
             return $this->fail($result);
         }
@@ -113,6 +153,7 @@ class Book extends BaseController
             ]);
             $this->prepareDict($sentence, $data['language_id'], $sentenceId);
         }
+        return true;
     }
     private function prepareDict($sentence, $language_id, $sentenceId)
     {

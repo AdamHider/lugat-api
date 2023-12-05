@@ -38,6 +38,10 @@ class TextModel extends Model
         if(isset($data['book_id'])){
             $this->where(['lgt_book_chapters.book_id' => $data['book_id']]);
         }
+        if(isset($data['is_built'])){
+            $this->where(['lgt_texts.is_built' => $data['is_built']]);
+        }
+        
         if(isset($data['chapter_id'])){
             $this->where(['lgt_texts.chapter_id' => $data['chapter_id']]);
         }
@@ -46,13 +50,30 @@ class TextModel extends Model
         if(empty($texts)){
             return [];
         }
+        foreach($texts as &$text){
+            $text['is_built'] = (bool) $text['is_built'];
+        }
         return $texts;
     }
     public function getItem ($data) 
     {
+        $this->select('lgt_texts.*');
         
-        $text = $this->select('*')->where(['chapter_id' => $data['chapter_id'], 'language_id' => $data['language_id']])->get()->getRowArray();
+        if(isset($data['chapter_id'])){
+            $this->where('lgt_texts.chapter_id', $data['chapter_id']);
+        }
+        if(isset($data['language_id'])){
+            $this->where('lgt_texts.language_id', $data['language_id']);
+        }
+        if(isset($data['book_id'])){
+            $this->join('lgt_book_chapters', 'lgt_texts.chapter_id = lgt_book_chapters.id')
+            ->where('lgt_book_chapters.book_id', $data['book_id']);
+        }
 
+        if(isset($data['is_built'])){
+            $this->where('lgt_texts.is_built', (int) $data['is_built']);
+        }
+        $text = $this->get()->getRowArray();
         if(empty($text)){
             return false;
         }
@@ -76,12 +97,6 @@ class TextModel extends Model
     }
     public function updateItem ($data)
     {
-        $item = $this->getItem($data);
-        if(empty($item['id'])){
-            $data['id'] = $this->createItem($data);
-        } else {
-            $data['id'] = $item['id'];
-        }
         $this->transBegin();
         
         $this->update(['id'=>$data['id']], $data);
