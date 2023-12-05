@@ -164,8 +164,8 @@ class Book extends BaseController
         foreach($tokenList as $index => &$token){
             $tokenWord = $token[0];
             $tokenCharIndex = $token[1]*1;
-            $word = $WordModel->getItem(['word' => $tokenWord, 'language_id' => $language_id]); 
-            $wordId = $word['id'] ?? $WordModel->createItem(['lemma_id' => 0, 'word' => $tokenWord, 'language_id' => $language_id]); 
+            $word = $WordModel->getItem(['filter' => ['word' => $tokenWord, 'language_id' => $language_id]]); 
+            $wordId = $word['id'] ?? $WordModel->createItem(['word' => $tokenWord, 'language_id' => $language_id]); 
             $TokenModel->createItem([
                 'word_id' => $wordId, 
                 'sentence_id' => $sentenceId, 

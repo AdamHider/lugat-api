@@ -15,8 +15,6 @@ class WordModel extends Model
     protected $returnType = 'array';
 
     protected $allowedFields = [
-        'lemma_id',
-        'form_id',
         'word', 
         'language_id'
     ];
@@ -31,13 +29,13 @@ class WordModel extends Model
         
         $this->join('lgt_languages', 'lgt_words.language_id = lgt_languages.id', 'left');
 
-        if(!empty($data['word_id'])){
+        if(isset($data['word_id'])){
             $this->where('lgt_words.id', $data['word_id']); 
         }
-        if(!empty($data['filter']['word'])){
-            $this->where('lgt_words.word', $this->escape($data['filter']['word']));
+        if(isset($data['filter']['word'])){
+            $this->where('lgt_words.word = '.$this->escape($data['filter']['word']));
         }
-        if(!empty($data['filter']['language_id'])){
+        if(isset($data['filter']['language_id'])){
             $this->where('lgt_words.language_id', $data['filter']['language_id']);
         }
 
@@ -103,24 +101,20 @@ class WordModel extends Model
     {
         $db = db_connect();
         $tokenList = explode(' ', $data['token']);
-        $subquery = $db->table('lgt_sentences s')
-        ->join('lgt_tokens t', 's.id = t.sentence_id')
-        ->join('lgt_words w', 'w.id = t.word_id AND w.word IN ("'.implode('","',$tokenList).'")')
+        $subquery = $db->table('lgt_words W')
+        ->join('lgt_tokens t', 'w.id = t.word_id')
         ->join('lgt_token_relations tr', 't.id = tr.token_id')
         ->join('lgt_token_relations tr1', 'tr.group_id = tr1.group_id')
         ->join('lgt_tokens t1', 't1.id = tr1.token_id')
         ->join('lgt_words w1', 'w1.id = t1.word_id AND w1.language_id = '.$data['target_language_id'])
         ->select("GROUP_CONCAT(DISTINCT w1.word  ORDER BY t1.`index` SEPARATOR ' ') AS word, COUNT(t1.id) AS freq")
-        ->like('s.sentence', $data['token'])
-        ->where("s.language_id = ".$data['source_language_id'])
+        ->where("w.word IN ('".implode("','",$tokenList)."') AND W.language_id = ".$data['source_language_id'])
         ->groupBy('tr.id');
         $builder = $db->newQuery()->fromSubquery($subquery, 'q');
         $result = $builder
         ->select("q.word, SUM(q.freq) as freq")
         ->groupBy('q.word')
         ->orderBy('freq DESC')->get()->getResultArray();
-        print_r($this->getLastQuery());
-        die;
         return $result;        
     }
     public function linkLemmas ($data)

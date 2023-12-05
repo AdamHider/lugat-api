@@ -58,15 +58,12 @@ class TokenModel extends Model
         ->groupBy('tr.group_id')
         ->having('ct = 2  AND tcount = t1count')
         ->get()->getResultArray();
-        
         if(empty($groups)){
             return false;
         }
         return $groups;
     }
 
-    
-    
     public function createItem ($data)
     {
         $this->validationRules = [];
