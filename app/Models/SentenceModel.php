@@ -110,8 +110,8 @@ class SentenceModel extends Model
     private function markupTokens($sentence, $char_idxs, $words)
     {
         $wrapTags = [
-            'start' => '<b>',
-            'end' => '</b>'
+            'start' => '<::><s>',
+            'end' => '<::>'
         ];
         $sentenceDiff = 0;
         $indexes = array_combine(explode(',', $char_idxs), explode(',', $words));
