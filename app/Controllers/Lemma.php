@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use CodeIgniter\API\ResponseTrait;
-use App\Libraries\Cerebrum\Thalamus;
 class Lemma extends BaseController
 {
     use ResponseTrait;

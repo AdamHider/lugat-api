@@ -26,7 +26,8 @@ class LanguageModel extends Model
     {
         
         $language = $this->where('id', $language_id)->get()->getRowArray();
-
+        
+        $language['flag'] = base_url('images/' . $language['flag']);
         return $language;
     }
     public function getItemId ($title) 
@@ -41,7 +42,9 @@ class LanguageModel extends Model
     public function getList () 
     {
         $languages = $this->get()->getResultArray();
-
+        foreach($languages as &$language){
+            $language['flag'] = base_url('images/' . $language['flag']);
+        }
         return $languages;
     }
 
