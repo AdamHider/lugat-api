@@ -73,7 +73,7 @@ class LemmaModel extends Model
         if(isset($data['limit']) && isset($data['offset'])){
             $this->limit($data['limit'], $data['offset']);
         } else {
-            $this->limit(0, 0);
+            $this->limit(7, 0);
         }
 
         $lemmas = $this->orderBy('lemma')->get()->getResultArray();

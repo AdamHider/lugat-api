@@ -96,5 +96,23 @@ class Word extends BaseController
         }
         return $this->respond($result, 200);
     }
+    public function autocomplete()
+    {
+        $WordModel = model('WordModel');
+
+        $filter = $this->request->getVar('filter');
+        $limit = $this->request->getVar('limit');
+        $offset = $this->request->getVar('offset');
+        $data = [
+            'filter' => $filter,
+            'limit' => $limit,
+            'offset' => $offset
+        ];
+        $result = $WordModel->autocomplete($data);
+        if(!$result){
+            return $this->failNotFound('not_found');
+        }
+        return $this->respond($result, 200);
+    }
 
 }

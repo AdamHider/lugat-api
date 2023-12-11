@@ -97,6 +97,26 @@ class WordModel extends Model
 
         return $data['id'];        
     }
+    public function autocomplete ($data) 
+    {
+        $this->select('lgt_words.*');
+        
+        if(!empty($data['filter']->word)){
+            $this->like('lgt_words.word', $data['filter']->word, 'after');
+        }
+        if(isset($data['limit']) && isset($data['offset'])){
+            $this->limit($data['limit'], $data['offset']);
+        } else {
+            $this->limit(7, 0);
+        }
+
+        $words = $this->orderBy('word')->get()->getResultArray();
+        
+        if(empty($words)){
+            return [];
+        }
+        return $words;
+    }
     public function predictList ($data)
     {
         $db = db_connect();
