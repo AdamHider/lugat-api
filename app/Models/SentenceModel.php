@@ -72,7 +72,7 @@ class SentenceModel extends Model
     }
     public function getPairList ($data) 
     {
-        $tokenList = explode(' ', $data['token']);
+        $tokenList = explode(' ', $data['query']);
         $sentenceGroups = $this->join('lgt_tokens t', 'lgt_sentences.id = t.sentence_id')
         ->join('lgt_words w', 'w.id = t.word_id AND w.word IN ("'.implode('","',$tokenList).'")')
         ->join('lgt_token_relations tr', 't.id = tr.token_id')
@@ -84,7 +84,7 @@ class SentenceModel extends Model
             lgt_sentences.sentence source_sentence, GROUP_CONCAT(t.char_index) source_char_idxs, GROUP_CONCAT(w.word) source_words, lgt_sentences.language_id source_language,
             s1.sentence target_sentence, GROUP_CONCAT(t1.char_index) target_char_idxs, GROUP_CONCAT(w1.word) target_words, s1.language_id target_language
         ")
-        ->like('lgt_sentences.sentence', $data['token'])
+        ->like('lgt_sentences.sentence', $data['query'])
         ->where("lgt_sentences.language_id = ".$data['source_language_id'])
         ->groupBy('lgt_sentences.id')->get()->getResultArray();
 

@@ -99,10 +99,18 @@ class WordModel extends Model
     }
     public function autocomplete ($data) 
     {
-        $this->select('lgt_words.*');
+        $this->join('lgt_tokens t', 'lgt_words.id = t.word_id')
+        ->join('lgt_token_relations tr', 't.id = tr.token_id')
+        ->select('lgt_words.*');
         
-        if(!empty($data['filter']->word)){
+        if(isset($data['filter']->word)){
             $this->like('lgt_words.word', $data['filter']->word, 'after');
+        }
+        if(isset($data['filter']->source_language_id) && isset($data['filter']->target_language_id)){
+            $this->join('lgt_token_relations tr1', 'tr.group_id = tr1.group_id')
+            ->join('lgt_tokens t1', 't1.id = tr1.token_id')
+            ->join('lgt_words w1', 'w1.id = t1.word_id AND w1.language_id = '.$data['filter']->target_language_id)
+            ->where('lgt_words.language_id = '.$data['filter']->source_language_id);
         }
         if(isset($data['limit']) && isset($data['offset'])){
             $this->limit($data['limit'], $data['offset']);
@@ -121,7 +129,7 @@ class WordModel extends Model
     {
         $db = db_connect();
         helper('Token');
-        $tokenList = explode(' ', $data['token']);
+        $tokenList = explode(' ', $data['query']);
         $subquery = $db->table('lgt_words w')
         ->join('lgt_tokens t', 'w.id = t.word_id')
         ->join('lgt_token_relations tr', 't.id = tr.token_id')
