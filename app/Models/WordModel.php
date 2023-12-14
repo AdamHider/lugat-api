@@ -136,14 +136,22 @@ class WordModel extends Model
         ->join('lgt_token_relations tr1', 'tr.group_id = tr1.group_id')
         ->join('lgt_tokens t1', 't1.id = tr1.token_id')
         ->join('lgt_words w1', 'w1.id = t1.word_id AND w1.language_id = '.$data['target_language_id'])
-        ->select("tr.group_id, GROUP_CONCAT(DISTINCT w.word ORDER BY t.`index` SEPARATOR ' ') AS source_word, GROUP_CONCAT(DISTINCT w1.word  ORDER BY t1.`index` SEPARATOR ' ') AS word, COUNT(t1.id) AS freq")
+        ->join('lgt_word_forms wf', 'w1.id = wf.word_id', 'left')
+        ->join('lgt_forms f', 'f.id = wf.form_id AND f.form = ""', 'left')
+        ->join('lgt_lemmas l', 'l.id = wf.lemma_id', 'left')
+        ->select("tr.group_id, 
+                GROUP_CONCAT(DISTINCT w.word  ORDER BY t.`index` SEPARATOR ' ') AS source_word,
+                GROUP_CONCAT(DISTINCT w1.word  ORDER BY t1.`index` SEPARATOR ' ') AS word,
+                GROUP_CONCAT(DISTINCT l.id ORDER BY t1.`index` SEPARATOR ' ') AS lemma_id,
+                IF(f.id,1, 0) as is_lemma,
+                COUNT(DISTINCT tr.group_id) AS frequency")
         ->where("w.word IN ('".implode("','",$tokenList)."') AND w.language_id = ".$data['source_language_id'])
         ->groupBy('tr.group_id');
         $builder = $db->newQuery()->fromSubquery($subquery, 'q');
         $result = $builder
-        ->select("q.group_id, q.source_word, q.word, SUM(q.freq) as freq")
+        ->select("q.group_id, q.source_word, q.word, SUM(q.frequency) as frequency, q.lemma_id, q.is_lemma")
         ->groupBy('q.word')
-        ->orderBy('freq DESC')->get()->getResultArray();
+        ->orderBy('frequency DESC')->get()->getResultArray();
         return $result;        
     }
     public function linkLemmas ($data)
